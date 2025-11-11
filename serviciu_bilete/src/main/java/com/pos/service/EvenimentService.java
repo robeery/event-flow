@@ -1,6 +1,7 @@
 package com.pos.service;
 
 import com.pos.dto.EvenimentDTO;
+import com.pos.exception.BusinessLogicException;
 import com.pos.exception.ResourceNotFoundException;
 import com.pos.models.Eveniment;
 import com.pos.repository.EvenimentRepository;
@@ -40,6 +41,25 @@ public class EvenimentService {
 
     public EvenimentDTO create(EvenimentDTO evenimentDTO) {
 
+        // Validare 1: Numele este obligatoriu
+        if (evenimentDTO.getNume() == null || evenimentDTO.getNume().trim().isEmpty()) {
+            throw new IllegalArgumentException("Numele evenimentului este obligatoriu");
+        }
+
+        // Validare 2: Verificam dacă numele este unic
+        boolean numeExista = evenimentRepository.findAll()
+                .stream()
+                .anyMatch(e -> e.getNume().equalsIgnoreCase(evenimentDTO.getNume()));
+
+        //409
+        if (numeExista) {
+            throw new BusinessLogicException("Un eveniment cu acest nume exista deja");
+        }
+
+        // Validare 3: Numărul de locuri trebuie >= 0
+        if (evenimentDTO.getNumarLocuri() != null && evenimentDTO.getNumarLocuri() < 0) {
+            throw new IllegalArgumentException("Numarul de locuri nu poate fi negativ");
+        }
         //dto -> entity
         Eveniment eveniment = new Eveniment();
         eveniment.setIdOwner(evenimentDTO.getIdOwner());
