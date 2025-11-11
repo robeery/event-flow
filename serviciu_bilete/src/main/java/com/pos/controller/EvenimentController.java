@@ -23,7 +23,7 @@ public class EvenimentController {
     @GetMapping
     public ResponseEntity<List<EvenimentDTO>> getAllEvenimente() {
         List<EvenimentDTO> evenimente = evenimentService.findAll();
-        return ResponseEntity.ok(evenimente); //returneaza doar 200 momentan
+        return ResponseEntity.ok(evenimente);
     }
 
 
@@ -33,7 +33,7 @@ public class EvenimentController {
     @GetMapping("/{id}")
     public ResponseEntity<EvenimentDTO> getEvenimentById(@PathVariable Integer id) {
         EvenimentDTO eveniment = evenimentService.findById(id);
-        return ResponseEntity.ok(eveniment); //returneaza doar 200 momentan
+        return ResponseEntity.ok(eveniment);
     }
 
 

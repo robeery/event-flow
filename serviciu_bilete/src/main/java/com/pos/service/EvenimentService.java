@@ -1,6 +1,7 @@
 package com.pos.service;
 
 import com.pos.dto.EvenimentDTO;
+import com.pos.exception.ResourceNotFoundException;
 import com.pos.models.Eveniment;
 import com.pos.repository.EvenimentRepository;
 import lombok.RequiredArgsConstructor;
@@ -29,7 +30,7 @@ public class EvenimentService {
 
     public EvenimentDTO findById(Integer id) {
         Eveniment eveniment = evenimentRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Eveniment nu a fost gasit cu id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Eveniment", "id", id));
 
         return convertToDTO(eveniment);
     }
