@@ -76,6 +76,33 @@ public class EvenimentService {
     }
 
 
+    public EvenimentDTO delete(Integer id) {
+        Eveniment eveniment = evenimentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Eveniment", "id", id));
+
+        // Validare 1: Are bilete?
+        if (eveniment.getBilete() != null && !eveniment.getBilete().isEmpty()) {
+            throw new BusinessLogicException(
+                    "Nu se poate sterge un eveniment cu bilete. Numar bilete: " +
+                            eveniment.getBilete().size()
+            );
+        }
+
+        // Validare 2: Face parte din pachete?
+        if (eveniment.getPacheteAsociate() != null && !eveniment.getPacheteAsociate().isEmpty()) {
+            throw new BusinessLogicException(
+                    "Nu se poate sterge un eveniment care face parte din pachete active. " +
+                            "Numar pachete: " + eveniment.getPacheteAsociate().size()
+            );
+        }
+
+        EvenimentDTO deletedDTO = convertToDTO(eveniment);
+        evenimentRepository.delete(eveniment);
+
+        return deletedDTO;
+    }
+
+
     private EvenimentDTO convertToDTO(Eveniment eveniment) {
         EvenimentDTO dto = new EvenimentDTO();
         dto.setId(eveniment.getId());

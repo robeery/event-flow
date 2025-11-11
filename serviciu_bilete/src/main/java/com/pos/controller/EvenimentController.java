@@ -45,4 +45,14 @@ public class EvenimentController {
         EvenimentDTO createdEveniment = evenimentService.create(evenimentDTO);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdEveniment);
     }
+
+    //DELETE /api/event-manager/events/{id}
+    //sterge un eveniment
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteEveniment(@PathVariable Integer id) {
+        evenimentService.delete(id);
+
+        // 204 No Content fara body in raspuns
+        return ResponseEntity.noContent().build();
+    }
 }

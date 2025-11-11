@@ -91,7 +91,7 @@ public class GlobalExceptionHandler {
 
         return new ResponseEntity<>(body, HttpStatus.UNSUPPORTED_MEDIA_TYPE);
     }
-    
+
 
      //Handler pentru HttpMessageNotReadableException
      //returneaza 422 Unprocessable Content
