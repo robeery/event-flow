@@ -4,7 +4,7 @@ import jakarta.persistence.Embeddable;
 import java.io.Serializable;
 import java.util.Objects;
 
-// Această clasă reprezintă cheia primară compusă pentru tabela JOIN_PE
+// Aceasta clasa reprezinta cheia primara compusa pentru tabela JOIN_PE
 @Embeddable
 public class PachetEvenimentId implements Serializable {
 

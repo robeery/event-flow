@@ -7,15 +7,23 @@ import com.pos.models.Eveniment;
 import com.pos.repository.EvenimentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Transactional
 public class EvenimentService {
 
     private final EvenimentRepository evenimentRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
      //iau toate evenimentele si le convertesc in DTO
      // Găsește toate evenimentele și le convertește în DTO
@@ -103,6 +111,108 @@ public class EvenimentService {
     }
 
 
+
+     //PUT - actualizeaza sau creaza evenimentul
+
+
+    public EvenimentDTO update(Integer id, EvenimentDTO evenimentDTO) {
+        // Validare 1: numele e obligatoriu
+        if (evenimentDTO.getNume() == null || evenimentDTO.getNume().trim().isEmpty()) {
+            throw new IllegalArgumentException("Numele evenimentului este obligatoriu");
+        }
+
+        // Validare 2: Numarul de locuri trebuie pozitiv
+        if (evenimentDTO.getNumarLocuri() != null && evenimentDTO.getNumarLocuri() < 0) {
+            throw new IllegalArgumentException("Numarul de locuri nu poate fi negativ");
+        }
+
+
+        Optional<Eveniment> existingOptional = evenimentRepository.findById(id);
+
+        if (existingOptional.isPresent()) {
+
+            Eveniment existing = existingOptional.get();
+
+            // Validare 3: se verifica daca se schimba numele daca e UK
+            if (!existing.getNume().equalsIgnoreCase(evenimentDTO.getNume())) {
+                boolean numeExista = evenimentRepository.findAll()
+                        .stream()
+                        .anyMatch(e -> !e.getId().equals(id) &&
+                                e.getNume().equalsIgnoreCase(evenimentDTO.getNume()));
+
+                if (numeExista) {
+                    throw new BusinessLogicException("Un eveniment cu acest nume exista deja");
+                }
+            }
+
+            // Validare 4: Are bilete?
+            if (evenimentDTO.getNumarLocuri() != null) {
+                int bileteVandute = (existing.getBilete() != null) ? existing.getBilete().size() : 0;
+
+                if (evenimentDTO.getNumarLocuri() < bileteVandute) {
+                    throw new BusinessLogicException(
+                            "Numarul de locuri (" + evenimentDTO.getNumarLocuri() +
+                                    ") nu poate fi mai mic decât numărul de bilete ve (" + bileteVandute + ")"
+                    );
+                }
+            }
+
+
+            existing.setIdOwner(evenimentDTO.getIdOwner());
+            existing.setNume(evenimentDTO.getNume());
+            existing.setLocatie(evenimentDTO.getLocatie());
+            existing.setDescriere(evenimentDTO.getDescriere());
+            existing.setNumarLocuri(evenimentDTO.getNumarLocuri());
+
+
+            Eveniment updated = evenimentRepository.save(existing);
+
+            return convertToDTO(updated);
+
+        } else {
+            // CREARE - evenimentul NU există
+
+            // Validare: verific nume UK
+            boolean numeExista = evenimentRepository.findAll()
+                    .stream()
+                    .anyMatch(e -> e.getNume().equalsIgnoreCase(evenimentDTO.getNume()));
+
+            if (numeExista) {
+                throw new BusinessLogicException("Un eveniment cu acest nume există deja");
+            }
+
+            // creez eveniment nou cu ID-ul specificat
+
+
+
+            //DEOARECE HIBERNATE/JPA FACE FIGURI SI CUM NU VREAU SA MANAGERIEZ MANUAL PK-URILE
+            //INSEREZ DIRECT IN BD
+            entityManager.createNativeQuery(
+                            "INSERT INTO evenimente (id, id_owner, nume, locatie, descriere, numar_locuri) " +
+                                    "VALUES (:id, :idOwner, :nume, :locatie, :descriere, :numarLocuri)"
+                    )
+                    .setParameter("id", id)
+                    .setParameter("idOwner", evenimentDTO.getIdOwner())
+                    .setParameter("nume", evenimentDTO.getNume())
+                    .setParameter("locatie", evenimentDTO.getLocatie())
+                    .setParameter("descriere", evenimentDTO.getDescriere())
+                    .setParameter("numarLocuri", evenimentDTO.getNumarLocuri())
+                    .executeUpdate();
+
+
+            //elegant ar fi pe viitor sa imi adaug eu in globalexceptionhandler ceva frumos, nu banal 500 de la spring
+            Eveniment created = evenimentRepository.findById(id)
+                    .orElseThrow(() -> new RuntimeException("Failed to create event"));
+
+            entityManager.flush();
+
+            return convertToDTO(created);
+        }
+    }
+
+
+
+
     private EvenimentDTO convertToDTO(Eveniment eveniment) {
         EvenimentDTO dto = new EvenimentDTO();
         dto.setId(eveniment.getId());
@@ -119,5 +229,11 @@ public class EvenimentService {
         }
 
         return dto;
+    }
+
+
+
+    public boolean existsById(Integer id) {
+        return evenimentRepository.existsById(id);
     }
 }

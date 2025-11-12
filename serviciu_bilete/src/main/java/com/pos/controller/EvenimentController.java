@@ -55,4 +55,23 @@ public class EvenimentController {
         // 204 No Content fara body in raspuns
         return ResponseEntity.noContent().build();
     }
+
+
+    //PUT /api/event-manager/events/{id}
+
+    @PutMapping("/{id}")
+    public ResponseEntity<EvenimentDTO> updateEveniment(
+            @PathVariable Integer id,
+            @RequestBody EvenimentDTO evenimentDTO) {
+
+        // Verificam dacă resursa exista pentru a decide status code-ul
+        boolean exists = evenimentService.existsById(id);
+
+        // Acttualizam/creem evenimentul
+        EvenimentDTO updatedEveniment = evenimentService.update(id, evenimentDTO);
+
+        return exists
+                ? ResponseEntity.ok(updatedEveniment)
+                : ResponseEntity.status(HttpStatus.CREATED).body(updatedEveniment);
+    }
 }

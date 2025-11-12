@@ -12,9 +12,17 @@ import java.util.Set;
 @Setter
 public class Eveniment {
 
+
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    @Setter
+    //AICI MA MAI GANDESC PANA LA URMA CE FEL DE GENERATIONTYPE FOLOSESC
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "evenimente_seq")
+    @SequenceGenerator(
+            name = "evenimente_seq",
+            sequenceName = "evenimente_id_seq",
+            allocationSize = 1
+    )
+    private Integer id;
 
     @Column(name = "id_owner", nullable = false)
     private int idOwner; // momentan int simplu
