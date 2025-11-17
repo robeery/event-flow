@@ -2,12 +2,19 @@ package com.pos.controller;
 
 import com.pos.dto.EvenimentDTO;
 import com.pos.service.EvenimentService;
+import com.pos.util.HateoasHelper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
 
 @RestController
 @RequestMapping("/api/event-manager/events")
@@ -15,15 +22,36 @@ import java.util.List;
 public class EvenimentController {
 
     private final EvenimentService evenimentService;
+    private final HateoasHelper hateoasHelper;
+
 
 
      // GET /api/event-manager/events
      //  returneaza toate evenimentele
 
     @GetMapping
-    public ResponseEntity<List<EvenimentDTO>> getAllEvenimente() {
+    public ResponseEntity<CollectionModel<EvenimentDTO>> getAllEvenimente() {
         List<EvenimentDTO> evenimente = evenimentService.findAll();
-        return ResponseEntity.ok(evenimente);
+
+        // adauga linkuri la fiecare eveniment
+        hateoasHelper.addLinksToEvenimente(evenimente);
+
+        // face CollectionModel cu link-uri la nivel de colectie
+        CollectionModel<EvenimentDTO> collectionModel = CollectionModel.of(evenimente);
+
+        // Link self pentru colecție
+        collectionModel.add(linkTo(methodOn(EvenimentController.class)
+                .getAllEvenimente())
+                .withSelfRel()
+                .withType("GET"));
+
+        // Link create pentru a crea un eveniment nou
+        collectionModel.add(linkTo(methodOn(EvenimentController.class)
+                .createEveniment(null))
+                .withRel("create")
+                .withType("POST"));
+
+        return ResponseEntity.ok(collectionModel);
     }
 
 
@@ -33,6 +61,7 @@ public class EvenimentController {
     @GetMapping("/{id}")
     public ResponseEntity<EvenimentDTO> getEvenimentById(@PathVariable Integer id) {
         EvenimentDTO eveniment = evenimentService.findById(id);
+        hateoasHelper.addLinksToEveniment(eveniment);
         return ResponseEntity.ok(eveniment);
     }
 
@@ -43,6 +72,10 @@ public class EvenimentController {
     @PostMapping
     public ResponseEntity<EvenimentDTO> createEveniment(@RequestBody EvenimentDTO evenimentDTO) {
         EvenimentDTO createdEveniment = evenimentService.create(evenimentDTO);
+
+
+        hateoasHelper.addLinksToEveniment(createdEveniment);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(createdEveniment);
     }
 
@@ -51,8 +84,6 @@ public class EvenimentController {
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEveniment(@PathVariable Integer id) {
         evenimentService.delete(id);
-
-        // 204 No Content fara body in raspuns
         return ResponseEntity.noContent().build();
     }
 
@@ -64,11 +95,11 @@ public class EvenimentController {
             @PathVariable Integer id,
             @RequestBody EvenimentDTO evenimentDTO) {
 
-        // Verificam dacă resursa exista pentru a decide status code-ul
         boolean exists = evenimentService.existsById(id);
-
-        // Acttualizam/creem evenimentul
         EvenimentDTO updatedEveniment = evenimentService.update(id, evenimentDTO);
+
+
+        hateoasHelper.addLinksToEveniment(updatedEveniment);
 
         return exists
                 ? ResponseEntity.ok(updatedEveniment)

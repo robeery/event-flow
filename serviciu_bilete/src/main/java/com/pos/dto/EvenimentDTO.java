@@ -1,9 +1,15 @@
 package com.pos.dto;
 
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
+import org.springframework.hateoas.RepresentationModel;
+import java.util.Map;
 
-@Data
-public class EvenimentDTO {
+
+@Getter
+@Setter
+public class EvenimentDTO extends RepresentationModel<EvenimentDTO>{
 
     private Integer id;
     private Integer idOwner;
@@ -12,5 +18,7 @@ public class EvenimentDTO {
     private String descriere;
     private Integer numarLocuri;
     private Integer bileteDisponibile;
+
+
 
 }

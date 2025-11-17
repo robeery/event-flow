@@ -1,0 +1,51 @@
+package com.pos.util;
+
+import com.pos.controller.EvenimentController;
+import com.pos.dto.EvenimentDTO;
+import org.springframework.hateoas.Link;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+
+import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
+
+@Component
+public class HateoasHelper {
+
+
+     // Adauga link-uri HATEOAS pentru un singur eveniment folosing webmvclinkbuilder din spring-hateoaas pentru generare automata
+
+
+    public void addLinksToEveniment(EvenimentDTO eveniment) {
+        // Link self - catre resursa curenta
+        eveniment.add(linkTo(methodOn(EvenimentController.class)
+                .getEvenimentById(eveniment.getId()))
+                .withSelfRel()
+                .withType("GET"));
+
+        // Link all-events - catre toate evenimentele
+        eveniment.add(linkTo(methodOn(EvenimentController.class)
+                .getAllEvenimente())
+                .withRel("all-events")
+                .withType("GET"));
+
+        // Link update - actualizeaza evenimentul
+        eveniment.add(linkTo(methodOn(EvenimentController.class)
+                .updateEveniment(eveniment.getId(), null))
+                .withRel("update")
+                .withType("PUT"));
+
+        // Link delete - sterge evenimentul
+        eveniment.add(linkTo(methodOn(EvenimentController.class)
+                .deleteEveniment(eveniment.getId()))
+                .withRel("delete")
+                .withType("DELETE"));
+    }
+
+
+     // Adauga link-uri HATEOAS pentru  lista de evenimente
+
+    public void addLinksToEvenimente(List<EvenimentDTO> evenimente) {
+        evenimente.forEach(this::addLinksToEveniment);
+    }
+}
