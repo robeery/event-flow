@@ -121,6 +121,12 @@ public class PachetController {
                 .withRel("packet")
                 .withType("GET"));
 
+        //link post
+        collectionModel.add(linkTo(methodOn(PachetController.class)
+                .createBiletForPachet(id, null))
+                .withRel("create")
+                .withType("POST"));
+
         return ResponseEntity.ok(collectionModel);
     }
 
@@ -146,5 +152,31 @@ public class PachetController {
 
         hateoasHelper.addLinksToBilet(bilet);
         return ResponseEntity.ok(bilet);
+    }
+
+    /**
+     * POST /api/event-manager/event-packets/{id}/tickets
+     * Creeaza un bilet pentru acest pachet
+     * body poate fi gol {} sau cu altele pe viitor, vad
+     */
+    @PostMapping("/{id}/tickets")
+    public ResponseEntity<BiletDTO> createBiletForPachet(
+            @PathVariable Integer id,
+            @RequestBody(required = false) BiletDTO biletDTO) {
+
+
+        pachetService.findById(id);
+
+
+        if (biletDTO == null) {
+            biletDTO = new BiletDTO();
+        }
+        biletDTO.setPachetId(id);
+        biletDTO.setEvenimentId(null);
+
+        BiletDTO createdBilet = biletService.create(biletDTO);
+        hateoasHelper.addLinksToBilet(createdBilet);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdBilet);
     }
 }
