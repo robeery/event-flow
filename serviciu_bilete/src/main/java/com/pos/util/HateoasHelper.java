@@ -1,7 +1,9 @@
 package com.pos.util;
 
+import com.pos.controller.BiletController;
 import com.pos.controller.EvenimentController;
 import com.pos.controller.PachetController;
+import com.pos.dto.BiletDTO;
 import com.pos.dto.EvenimentDTO;
 import com.pos.dto.PachetDTO;
 import org.springframework.hateoas.Link;
@@ -77,5 +79,41 @@ public class HateoasHelper {
 
     public void addLinksToPachete(List<PachetDTO> pachete) {
         pachete.forEach(this::addLinksToPachet);
+    }
+
+    ///BILETE
+    public void addLinksToBilet(BiletDTO bilet) {
+        bilet.add(linkTo(methodOn(BiletController.class)
+                .getBiletByCod(bilet.getCod()))
+                .withSelfRel()
+                .withType("GET"));
+
+        bilet.add(linkTo(methodOn(BiletController.class)
+                .getAllBilete())
+                .withRel("all-tickets")
+                .withType("GET"));
+
+        bilet.add(linkTo(methodOn(BiletController.class)
+                .deleteBilet(bilet.getCod()))
+                .withRel("delete")
+                .withType("DELETE"));
+
+        if (bilet.getEvenimentId() != null) {
+            bilet.add(linkTo(methodOn(EvenimentController.class)
+                    .getEvenimentById(bilet.getEvenimentId()))
+                    .withRel("event")
+                    .withType("GET"));
+        }
+
+        if (bilet.getPachetId() != null) {
+            bilet.add(linkTo(methodOn(PachetController.class)
+                    .getPachetById(bilet.getPachetId()))
+                    .withRel("packet")
+                    .withType("GET"));
+        }
+    }
+
+    public void addLinksToBilete(List<BiletDTO> bilete) {
+        bilete.forEach(this::addLinksToBilet);
     }
 }

@@ -17,8 +17,9 @@ import lombok.Setter;
 public class Bilet {
 
     @Id
-    @Column(name = "cod")
-    private String cod; // primary key (nu auto-increment)
+    @Column(length = 50)
+    private String cod;
+
 
     // relatia ManyToOne catre Pachet (un bilet poate fi pentru un pachet)
     @ManyToOne

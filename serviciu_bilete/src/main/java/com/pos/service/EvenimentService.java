@@ -170,7 +170,7 @@ public class EvenimentService {
             return convertToDTO(updated);
 
         } else {
-            // CREARE - evenimentul NU există
+            // CREARE - evenimentul NU exista
 
             // Validare: verific nume UK
             boolean numeExista = evenimentRepository.findAll()
