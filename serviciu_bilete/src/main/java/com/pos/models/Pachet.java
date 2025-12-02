@@ -13,8 +13,14 @@ import java.util.Set;
 public class Pachet {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private int id;
+    //@GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "pachet_seq")
+    @SequenceGenerator(
+            name = "pachet_seq",
+            sequenceName = "pachet_id_seq",
+            allocationSize = 1
+    )
+    private Integer id;
 
     @Column(name = "id_owner", nullable = false)
     private int idOwner;
@@ -26,6 +32,9 @@ public class Pachet {
     private String locatie;
 
     private String descriere;
+
+    @Column(name = "numar_locuri")
+    private Integer numarLocuri;
 
     // relatia catre tabela de join 'PachetEveniment'
     @OneToMany(mappedBy = "pachet")

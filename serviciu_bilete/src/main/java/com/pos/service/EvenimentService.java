@@ -26,7 +26,7 @@ public class EvenimentService {
     private EntityManager entityManager;
 
      //iau toate evenimentele si le convertesc in DTO
-     // Găsește toate evenimentele și le convertește în DTO
+     // gaseste toate evenimentele si le convertește in DTO
 
     public List<EvenimentDTO> findAll() {
         return evenimentRepository.findAll()
