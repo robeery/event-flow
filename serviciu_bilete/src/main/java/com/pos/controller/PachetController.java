@@ -1,6 +1,9 @@
 package com.pos.controller;
 
+import com.pos.dto.BiletDTO;
 import com.pos.dto.PachetDTO;
+import com.pos.exception.ResourceNotFoundException;
+import com.pos.service.BiletService;
 import com.pos.service.PachetService;
 import com.pos.util.HateoasHelper;
 import lombok.RequiredArgsConstructor;
@@ -20,6 +23,7 @@ public class PachetController {
 
     private final PachetService pachetService;
     private final HateoasHelper hateoasHelper;
+    private final BiletService biletService;
 
 
     // GET /api/event-manager/event-packets
@@ -89,5 +93,58 @@ public class PachetController {
         return exists
                 ? ResponseEntity.ok(updatedPachet)
                 : ResponseEntity.status(HttpStatus.CREATED).body(updatedPachet);
+    }
+
+    /**
+     * GET /api/event-manager/event-packets/{id}/tickets
+     * Returneaza toate biletele pentru un pachet
+     */
+    @GetMapping("/{id}/tickets")
+    public ResponseEntity<CollectionModel<BiletDTO>> getBileteForPachet(@PathVariable Integer id) {
+
+        pachetService.findById(id);
+
+        List<BiletDTO> bilete = biletService.findByPachetId(id);
+        hateoasHelper.addLinksToBilete(bilete);
+
+        CollectionModel<BiletDTO> collectionModel = CollectionModel.of(bilete);
+
+        // Link self pentru colectia de bilete
+        collectionModel.add(linkTo(methodOn(PachetController.class)
+                .getBileteForPachet(id))
+                .withSelfRel()
+                .withType("GET"));
+
+        // Link catre pachet
+        collectionModel.add(linkTo(methodOn(PachetController.class)
+                .getPachetById(id))
+                .withRel("packet")
+                .withType("GET"));
+
+        return ResponseEntity.ok(collectionModel);
+    }
+
+    /**
+     * GET /api/event-manager/event-packets/{id}/tickets/{ticketCod}
+     * Returneaza un bilet specific pentru un pachet
+     */
+    @GetMapping("/{id}/tickets/{ticketCod}")
+    public ResponseEntity<BiletDTO> getBiletForPachet(
+            @PathVariable Integer id,
+            @PathVariable String ticketCod) {
+
+
+        pachetService.findById(id);
+
+
+        BiletDTO bilet = biletService.findByCod(ticketCod);
+
+        // Verifica ca biletul apartine acestui pachet
+        if (bilet.getPachetId() == null || !bilet.getPachetId().equals(id)) {
+            throw new ResourceNotFoundException("Bilet", "cod", ticketCod + " for packet " + id);
+        }
+
+        hateoasHelper.addLinksToBilet(bilet);
+        return ResponseEntity.ok(bilet);
     }
 }

@@ -28,7 +28,7 @@ public class Pachet {
     @Column(unique = true, nullable = false)
     private String nume;
 
-    @Column(nullable = false)
+    @Column
     private String locatie;
 
     private String descriere;
