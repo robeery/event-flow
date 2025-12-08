@@ -15,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import com.pos.service.EvenimentService;
 import java.util.List;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
@@ -28,6 +29,7 @@ public class PachetController {
     private final HateoasHelper hateoasHelper;
     private final BiletService biletService;
     private final PachetEvenimentService pachetEvenimentService;
+    private final EvenimentService evenimentService;
 
 
     // GET /api/event-manager/event-packets
@@ -205,8 +207,8 @@ public class PachetController {
                 .withType("GET"));
 
         collectionModel.add(linkTo(methodOn(PachetController.class)
-                .addEvenimentToPachet(id, null))
-                .withRel("add-event")
+                .createEvenimentInPachet(id, null))
+                .withRel("create-event")
                 .withType("POST"));
 
         return ResponseEntity.ok(collectionModel);
@@ -214,28 +216,36 @@ public class PachetController {
 
     /**
      * POST /api/event-manager/event-packets/{id}/events
-     * Adauga un eveniment in acest pachet
-     * Body: { "evenimentId": 3}
+     * Creeaza un eveniment NOU si il adauga in acest pachet
+     * Body: EvenimentDTO complet
      */
     @PostMapping("/{id}/events")
-    public ResponseEntity<Void> addEvenimentToPachet(
+    public ResponseEntity<EvenimentDTO> createEvenimentInPachet(
             @PathVariable Integer id,
-            @RequestBody PachetEvenimentCreateDTO dto) {
+            @RequestBody EvenimentDTO evenimentDTO) {
 
-        // Validare: evenimentId e obligatoriu
-        if (dto.getEvenimentId() == null) {
-            throw new IllegalArgumentException("evenimentId este obligatoriu");
-        }
 
-        pachetEvenimentService.addEvenimentToPachet(id, dto.getEvenimentId());
+        pachetService.findById(id);
 
-        // 201 Created cu Location header
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .header("Location",
-                        linkTo(methodOn(PachetController.class)
-                                .getEvenimenteForPachet(id))
-                                .toUri().toString())
-                .build();
+        // 1. creez evenimentul
+        EvenimentDTO createdEveniment = evenimentService.create(evenimentDTO);
+
+        // 2. adaug asocierea ev<->pachet
+
+        pachetEvenimentService.addEvenimentToPachet(
+                id,
+                createdEveniment.getId()
+
+        );
+
+        // 3. hateoas
+        hateoasHelper.addLinksToEveniment(createdEveniment);
+
+        createdEveniment.add(linkTo(methodOn(PachetController.class)
+                .getPachetById(id))
+                .withRel("parent-packet")
+                .withType("GET"));
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(createdEveniment);
     }
 }

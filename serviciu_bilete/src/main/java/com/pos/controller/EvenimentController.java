@@ -231,11 +231,11 @@ public class EvenimentController {
 
     /**
      * POST /api/event-manager/events/{id}/event-packets
-     * Adauga acest eveniment intr-un pachet
+     * Asociaza acest eveniment existent intr-un pachet
      * Body: { "pachetId": 2 }
      */
     @PostMapping("/{id}/event-packets")
-    public ResponseEntity<Void> addEvenimentToPachet(
+    public ResponseEntity<PachetEvenimentCreateDTO> addEvenimentToPachet(
             @PathVariable Integer id,
             @RequestBody PachetEvenimentCreateDTO dto) {
 
@@ -244,15 +244,13 @@ public class EvenimentController {
             throw new IllegalArgumentException("pachetId este obligatoriu");
         }
 
-        pachetEvenimentService.addPachetToEveniment(id, dto.getPachetId());
+        PachetEvenimentCreateDTO result = pachetEvenimentService.addPachetToEveniment(id, dto.getPachetId());
 
-        // 201 Created cu Location header
-        return ResponseEntity
-                .status(HttpStatus.CREATED)
-                .header("Location",
-                        linkTo(methodOn(EvenimentController.class)
-                                .getPacheteForEveniment(id))
-                                .toUri().toString())
-                .build();
+        //hateoas
+        hateoasHelper.addLinksToPachetEveniment(result);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
+
+
 }

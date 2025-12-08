@@ -2,6 +2,7 @@ package com.pos.service;
 
 import com.pos.dto.EvenimentDTO;
 import com.pos.dto.PachetDTO;
+import com.pos.dto.PachetEvenimentCreateDTO;
 import com.pos.exception.BusinessLogicException;
 import com.pos.models.Eveniment;
 import com.pos.models.Pachet;
@@ -11,7 +12,7 @@ import com.pos.repository.PachetEvenimentRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import com.pos.exception.ResourceNotFoundException;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -51,33 +52,73 @@ public class PachetEvenimentService {
     }
 
     /**
-     * Adaugă un eveniment într-un pachet
+     * Adauga un eveniment intr-un pachet
      */
-    public void addEvenimentToPachet(Integer pachetId, Integer evenimentId) {
-        // Verifică că pachetul și evenimentul există
+    public PachetEvenimentCreateDTO addEvenimentToPachet(Integer pachetId, Integer evenimentId) {
+        // Verifica ca pachetul si evenimentul exista
         Pachet pachet = pachetService.findEntityById(pachetId);
         Eveniment eveniment = evenimentService.findEntityById(evenimentId);
 
-        // Verifică dacă asocierea deja există
+        // Verifica daca asocierea deja exista
         PachetEvenimentId id = new PachetEvenimentId(pachetId, evenimentId);
         if (pachetEvenimentRepository.existsById(id)) {
             throw new BusinessLogicException("Evenimentul este deja inclus in acest pachet");
         }
 
-        // Creează asocierea
+        // Creeaza asocierea
         PachetEveniment pe = new PachetEveniment();
         pe.setId(id);
         pe.setPachet(pachet);
         pe.setEveniment(eveniment);
 
+        PachetEvenimentCreateDTO dto = new PachetEvenimentCreateDTO();
+        dto.setPachetId(pachetId);
+        dto.setEvenimentId(evenimentId);
+
 
         pachetEvenimentRepository.save(pe);
+
+        return dto;
     }
 
-    /**
-     * Adauga un pachet pentru un eveniment (aceeasi operație, alt context)
-     */
-    public void addPachetToEveniment(Integer evenimentId, Integer pachetId) {
-        addEvenimentToPachet(pachetId, evenimentId);
+    public PachetEvenimentCreateDTO addPachetToEveniment(Integer evenimentId, Integer pachetId) {
+        return addEvenimentToPachet(pachetId, evenimentId);
     }
+
+
+
+
+    /**
+     * sterge asocierea dintre un eveniment si un pachet
+     */
+
+    /*
+    public void removeEvenimentFromPachet(Integer pachetId, Integer evenimentId) {
+        PachetEvenimentId id = new PachetEvenimentId(pachetId, evenimentId);
+
+        if (!pachetEvenimentRepository.existsById(id)) {
+            throw new ResourceNotFoundException(
+                    "Asociere",
+                    "pachetId=" + pachetId + ", evenimentId=" + evenimentId,
+                    ""
+            );
+        }
+
+        pachetEvenimentRepository.deleteById(id);
+    }
+
+     */
+
+    /**
+     * sterge asocierea dintre un pachet si un eveniment
+     * (aceeasi operație, alt context)
+     */
+
+    /*
+    public void removePachetFromEveniment(Integer evenimentId, Integer pachetId) {
+        removeEvenimentFromPachet(pachetId, evenimentId);
+    }
+
+     */
+
 }

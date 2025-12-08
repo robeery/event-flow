@@ -3,9 +3,11 @@ package com.pos.util;
 import com.pos.controller.BiletController;
 import com.pos.controller.EvenimentController;
 import com.pos.controller.PachetController;
+
 import com.pos.dto.BiletDTO;
 import com.pos.dto.EvenimentDTO;
 import com.pos.dto.PachetDTO;
+import com.pos.dto.PachetEvenimentCreateDTO;
 import org.springframework.hateoas.Link;
 import org.springframework.stereotype.Component;
 
@@ -45,6 +47,16 @@ public class HateoasHelper {
                 .deleteEveniment(eveniment.getId()))
                 .withRel("delete")
                 .withType("DELETE"));
+
+        eveniment.add(linkTo(methodOn(EvenimentController.class)
+                .getBileteForEveniment(eveniment.getId()))
+                .withRel("tickets")
+                .withType("GET"));
+
+        eveniment.add(linkTo(methodOn(EvenimentController.class)
+                .getPacheteForEveniment(eveniment.getId()))
+                .withRel("event-packets")
+                .withType("GET"));
     }
 
 
@@ -75,6 +87,16 @@ public class HateoasHelper {
                 .deletePachet(pachet.getId()))
                 .withRel("delete")
                 .withType("DELETE"));
+
+        pachet.add(linkTo(methodOn(PachetController.class)
+                .getBileteForPachet(pachet.getId()))
+                .withRel("tickets")
+                .withType("GET"));
+
+        pachet.add(linkTo(methodOn(PachetController.class)
+                .getEvenimenteForPachet(pachet.getId()))
+                .withRel("events")
+                .withType("GET"));
     }
 
     public void addLinksToPachete(List<PachetDTO> pachete) {
@@ -115,5 +137,34 @@ public class HateoasHelper {
 
     public void addLinksToBilete(List<BiletDTO> bilete) {
         bilete.forEach(this::addLinksToBilet);
+    }
+
+    /// ASOCIERI PACHET-EVENIMENT
+
+    public void addLinksToPachetEveniment(PachetEvenimentCreateDTO asociere) {
+
+        // Link catre eveniment
+        asociere.add(linkTo(methodOn(EvenimentController.class)
+                .getEvenimentById(asociere.getEvenimentId()))
+                .withRel("event")
+                .withType("GET"));
+
+        // Link catre pachet
+        asociere.add(linkTo(methodOn(PachetController.class)
+                .getPachetById(asociere.getPachetId()))
+                .withRel("packet")
+                .withType("GET"));
+
+        // Link catre toate pachetele evenimentului
+        asociere.add(linkTo(methodOn(EvenimentController.class)
+                .getPacheteForEveniment(asociere.getEvenimentId()))
+                .withRel("all-event-packets")
+                .withType("GET"));
+
+        // Link catre toate evenimentele pachetului
+        asociere.add(linkTo(methodOn(PachetController.class)
+                .getEvenimenteForPachet(asociere.getPachetId()))
+                .withRel("all-packet-events")
+                .withType("GET"));
     }
 }
