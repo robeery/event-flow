@@ -26,12 +26,32 @@ public class EvenimentService {
     private EntityManager entityManager;
 
      //iau toate evenimentele si le convertesc in DTO
-     // gaseste toate evenimentele si le convertește in DTO
+     // gaseste toate evenimentele si le converteste in DTO
 
     public List<EvenimentDTO> findAll() {
         return evenimentRepository.findAll()
                 .stream()
                 .map(this::convertToDTO)  // convertim Entity → DTO
+                .collect(Collectors.toList());
+
+        //sau
+        // return findAll(null, null);
+    }
+
+    //filtrare optionala
+    public List<EvenimentDTO> findAll(String location, String name) {
+        List<Eveniment> evenimente;
+
+        if (location != null && !location.trim().isEmpty()) {
+            evenimente = evenimentRepository.findByLocatie(location);
+        } else if (name != null && !name.trim().isEmpty()) {
+            evenimente = evenimentRepository.findByNumeContainingIgnoreCase(name);
+        } else {
+            evenimente = evenimentRepository.findAll();
+        }
+
+        return evenimente.stream()
+                .map(this::convertToDTO)
                 .collect(Collectors.toList());
     }
 

@@ -32,7 +32,7 @@ public class HateoasHelper {
 
         // Link all-events - catre toate evenimentele
         eveniment.add(linkTo(methodOn(EvenimentController.class)
-                .getAllEvenimente())
+                .getAllEvenimente(null, null))
                 .withRel("all-events")
                 .withType("GET"));
 

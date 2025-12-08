@@ -10,6 +10,7 @@ import com.pos.service.PachetEvenimentService;
 import com.pos.util.HateoasHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.Link;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,6 +19,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import com.pos.dto.PachetEvenimentCreateDTO;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
@@ -35,11 +38,15 @@ public class EvenimentController {
 
 
      // GET /api/event-manager/events
-     //  returneaza toate evenimentele
+     // returneaza toate evenimentele
+    //optional: ?location=... sau ?name=...
 
     @GetMapping
-    public ResponseEntity<CollectionModel<EvenimentDTO>> getAllEvenimente() {
-        List<EvenimentDTO> evenimente = evenimentService.findAll();
+    public ResponseEntity<CollectionModel<EvenimentDTO>> getAllEvenimente(
+            @RequestParam(required = false) String location,
+            @RequestParam(required = false) String name)
+    {
+        List<EvenimentDTO> evenimente = evenimentService.findAll(location, name);
 
         // adauga linkuri la fiecare eveniment
         hateoasHelper.addLinksToEvenimente(evenimente);
@@ -47,11 +54,34 @@ public class EvenimentController {
         // face CollectionModel cu link-uri la nivel de colectie
         CollectionModel<EvenimentDTO> collectionModel = CollectionModel.of(evenimente);
 
-        // Link self pentru colecție
-        collectionModel.add(linkTo(methodOn(EvenimentController.class)
-                .getAllEvenimente())
+
+        // Link self pentru colectie
+        if (location == null && name == null) {
+            // Link simplu fara parametri
+            collectionModel.add(linkTo(methodOn(EvenimentController.class)
+                    .getAllEvenimente(null, null))
+                    .withSelfRel()
+                    .withType("GET"));
+        } else {
+            // Link cu parametrii actuali
+            collectionModel.add(linkTo(methodOn(EvenimentController.class)
+                    .getAllEvenimente(location, name))
+                    .withSelfRel()
+                    .withType("GET"));
+        }
+
+
+
+        //  face singur direct
+        //to do and mess around with this later
+        /*
+        Link selfLink = Link.of(ServletUriComponentsBuilder.fromCurrentRequest().toUriString())
                 .withSelfRel()
-                .withType("GET"));
+                .withType("GET");
+
+        collectionModel.add(selfLink);
+        */
+
 
         // Link create pentru a crea un eveniment nou
         collectionModel.add(linkTo(methodOn(EvenimentController.class)
