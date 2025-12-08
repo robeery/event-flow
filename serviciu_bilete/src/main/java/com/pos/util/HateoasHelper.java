@@ -166,5 +166,11 @@ public class HateoasHelper {
                 .getEvenimenteForPachet(asociere.getPachetId()))
                 .withRel("all-packet-events")
                 .withType("GET"));
+
+        // Link delete
+        asociere.add(linkTo(methodOn(EvenimentController.class)
+                .removeEvenimentFromPachet(asociere.getEvenimentId(), asociere.getPachetId()))
+                .withRel("delete")
+                .withType("DELETE"));
     }
 }

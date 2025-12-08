@@ -92,7 +92,7 @@ public class PachetEvenimentService {
      * sterge asocierea dintre un eveniment si un pachet
      */
 
-    /*
+
     public void removeEvenimentFromPachet(Integer pachetId, Integer evenimentId) {
         PachetEvenimentId id = new PachetEvenimentId(pachetId, evenimentId);
 
@@ -107,18 +107,18 @@ public class PachetEvenimentService {
         pachetEvenimentRepository.deleteById(id);
     }
 
-     */
+
 
     /**
      * sterge asocierea dintre un pachet si un eveniment
      * (aceeasi operație, alt context)
      */
 
-    /*
+
     public void removePachetFromEveniment(Integer evenimentId, Integer pachetId) {
         removeEvenimentFromPachet(pachetId, evenimentId);
     }
 
-     */
+
 
 }

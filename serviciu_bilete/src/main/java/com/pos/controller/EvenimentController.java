@@ -252,5 +252,18 @@ public class EvenimentController {
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }
 
+    /**
+     * DELETE /api/event-manager/events/{id}/event-packets/{pachetId}
+     * sterge acest eveniment din pachetul specificat
+     */
+    @DeleteMapping("/{id}/event-packets/{pachetId}")
+    public ResponseEntity<Void> removeEvenimentFromPachet(
+            @PathVariable Integer id,
+            @PathVariable Integer pachetId) {
+
+        pachetEvenimentService.removePachetFromEveniment(id, pachetId);
+        return ResponseEntity.noContent().build();
+    }
+
 
 }
