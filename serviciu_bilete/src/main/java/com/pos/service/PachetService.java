@@ -213,4 +213,9 @@ public class PachetService {
     public boolean existsById(Integer id) {
         return pachetRepository.existsById(id);
     }
+
+    public Pachet findEntityById(Integer id) {
+        return pachetRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Pachet", "id", id));
+    }
 }

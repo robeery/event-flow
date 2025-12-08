@@ -236,4 +236,9 @@ public class EvenimentService {
     public boolean existsById(Integer id) {
         return evenimentRepository.existsById(id);
     }
+
+    public Eveniment findEntityById(Integer id) {
+        return evenimentRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Eveniment", "id", id));
+    }
 }

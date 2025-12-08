@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.pos.dto.PachetEvenimentCreateDTO;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
@@ -220,6 +221,38 @@ public class EvenimentController {
                 .withRel("event")
                 .withType("GET"));
 
+        collectionModel.add(linkTo(methodOn(EvenimentController.class)
+                .addEvenimentToPachet(id, null))
+                .withRel("add-to-packet")
+                .withType("POST"));
+
         return ResponseEntity.ok(collectionModel);
+    }
+
+    /**
+     * POST /api/event-manager/events/{id}/event-packets
+     * Adauga acest eveniment intr-un pachet
+     * Body: { "pachetId": 2 }
+     */
+    @PostMapping("/{id}/event-packets")
+    public ResponseEntity<Void> addEvenimentToPachet(
+            @PathVariable Integer id,
+            @RequestBody PachetEvenimentCreateDTO dto) {
+
+        // Validare: pachetId e obligatoriu
+        if (dto.getPachetId() == null) {
+            throw new IllegalArgumentException("pachetId este obligatoriu");
+        }
+
+        pachetEvenimentService.addPachetToEveniment(id, dto.getPachetId());
+
+        // 201 Created cu Location header
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .header("Location",
+                        linkTo(methodOn(EvenimentController.class)
+                                .getPacheteForEveniment(id))
+                                .toUri().toString())
+                .build();
     }
 }

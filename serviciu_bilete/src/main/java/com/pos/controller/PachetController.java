@@ -3,6 +3,7 @@ package com.pos.controller;
 import com.pos.dto.BiletDTO;
 import com.pos.dto.EvenimentDTO;
 import com.pos.dto.PachetDTO;
+import com.pos.dto.PachetEvenimentCreateDTO;
 import com.pos.exception.ResourceNotFoundException;
 import com.pos.service.BiletService;
 import com.pos.service.PachetEvenimentService;
@@ -203,6 +204,38 @@ public class PachetController {
                 .withRel("packet")
                 .withType("GET"));
 
+        collectionModel.add(linkTo(methodOn(PachetController.class)
+                .addEvenimentToPachet(id, null))
+                .withRel("add-event")
+                .withType("POST"));
+
         return ResponseEntity.ok(collectionModel);
+    }
+
+    /**
+     * POST /api/event-manager/event-packets/{id}/events
+     * Adauga un eveniment in acest pachet
+     * Body: { "evenimentId": 3}
+     */
+    @PostMapping("/{id}/events")
+    public ResponseEntity<Void> addEvenimentToPachet(
+            @PathVariable Integer id,
+            @RequestBody PachetEvenimentCreateDTO dto) {
+
+        // Validare: evenimentId e obligatoriu
+        if (dto.getEvenimentId() == null) {
+            throw new IllegalArgumentException("evenimentId este obligatoriu");
+        }
+
+        pachetEvenimentService.addEvenimentToPachet(id, dto.getEvenimentId());
+
+        // 201 Created cu Location header
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .header("Location",
+                        linkTo(methodOn(PachetController.class)
+                                .getEvenimenteForPachet(id))
+                                .toUri().toString())
+                .build();
     }
 }

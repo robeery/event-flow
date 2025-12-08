@@ -19,7 +19,7 @@ public class PachetEvenimentId implements Serializable {
         this.evenimentId = evenimentId;
     }
 
-    // Gettere si Settere
+    // Gettere si Settere in case i need them
     public int getPachetId() { return pachetId; }
     public void setPachetId(int pachetId) { this.pachetId = pachetId; }
     public int getEvenimentId() { return evenimentId; }
