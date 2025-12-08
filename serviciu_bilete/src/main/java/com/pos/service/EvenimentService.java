@@ -213,7 +213,7 @@ public class EvenimentService {
 
 
 
-    private EvenimentDTO convertToDTO(Eveniment eveniment) {
+    public EvenimentDTO convertToDTO(Eveniment eveniment) {
         EvenimentDTO dto = new EvenimentDTO();
         dto.setId(eveniment.getId());
         dto.setIdOwner(eveniment.getIdOwner());

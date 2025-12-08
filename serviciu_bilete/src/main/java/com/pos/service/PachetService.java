@@ -191,7 +191,7 @@ public class PachetService {
     }
 
 
-    private PachetDTO convertToDTO(Pachet pachet) {
+    public PachetDTO convertToDTO(Pachet pachet) {
         PachetDTO dto = new PachetDTO();
         dto.setId(pachet.getId());
         dto.setIdOwner(pachet.getIdOwner());

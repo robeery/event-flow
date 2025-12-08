@@ -43,4 +43,7 @@ public class Eveniment {
     // relatia catre bilete
     @OneToMany(mappedBy = "eveniment")
     private Set<Bilet> bilete;
+
+
+
 }

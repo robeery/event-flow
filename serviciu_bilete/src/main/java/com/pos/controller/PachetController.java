@@ -1,9 +1,11 @@
 package com.pos.controller;
 
 import com.pos.dto.BiletDTO;
+import com.pos.dto.EvenimentDTO;
 import com.pos.dto.PachetDTO;
 import com.pos.exception.ResourceNotFoundException;
 import com.pos.service.BiletService;
+import com.pos.service.PachetEvenimentService;
 import com.pos.service.PachetService;
 import com.pos.util.HateoasHelper;
 import lombok.RequiredArgsConstructor;
@@ -24,6 +26,7 @@ public class PachetController {
     private final PachetService pachetService;
     private final HateoasHelper hateoasHelper;
     private final BiletService biletService;
+    private final PachetEvenimentService pachetEvenimentService;
 
 
     // GET /api/event-manager/event-packets
@@ -178,5 +181,28 @@ public class PachetController {
         hateoasHelper.addLinksToBilet(createdBilet);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(createdBilet);
+    }
+    /**
+    GET /api/event-manager/event-packets/{id}/events
+     returneaza evenimentele incluse in pachet
+     */
+    @GetMapping("/{id}/events")
+    public ResponseEntity<CollectionModel<EvenimentDTO>> getEvenimenteForPachet(@PathVariable Integer id) {
+        List<EvenimentDTO> evenimente = pachetEvenimentService.findEvenimenteForPachet(id);
+        hateoasHelper.addLinksToEvenimente(evenimente);
+
+        CollectionModel<EvenimentDTO> collectionModel = CollectionModel.of(evenimente);
+
+        collectionModel.add(linkTo(methodOn(PachetController.class)
+                .getEvenimenteForPachet(id))
+                .withSelfRel()
+                .withType("GET"));
+
+        collectionModel.add(linkTo(methodOn(PachetController.class)
+                .getPachetById(id))
+                .withRel("packet")
+                .withType("GET"));
+
+        return ResponseEntity.ok(collectionModel);
     }
 }

@@ -15,15 +15,15 @@ public class PachetEveniment {
     @EmbeddedId
     private PachetEvenimentId id;
 
-    // Relația ManyToOne către Pachet
+    // relatia ManyToOne catre Pachet
     @ManyToOne
     @MapsId("pachetId") // Mapează partea 'pachetId' a @EmbeddedId
     @JoinColumn(name = "pachet_id")
     private Pachet pachet;
 
-    // Relația ManyToOne către Eveniment
+    // Relatia ManyToOne catre Eveniment
     @ManyToOne
-    @MapsId("evenimentId") // Mapează partea 'evenimentId' a @EmbeddedId
+    @MapsId("evenimentId") // Mapeaza partea 'evenimentId' a @EmbeddedId
     @JoinColumn(name = "eveniment_id")
     private Eveniment eveniment;
 

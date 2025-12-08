@@ -11,7 +11,7 @@ public class PachetEvenimentId implements Serializable {
     private int pachetId;
     private int evenimentId;
 
-    // Constructor, gettere, settere, hashCode și equals sunt necesare
+    // Constructor, gettere, settere, hashCode si equals sunt necesare
     public PachetEvenimentId() {}
 
     public PachetEvenimentId(int pachetId, int evenimentId) {
@@ -19,7 +19,7 @@ public class PachetEvenimentId implements Serializable {
         this.evenimentId = evenimentId;
     }
 
-    // Gettere și Settere
+    // Gettere si Settere
     public int getPachetId() { return pachetId; }
     public void setPachetId(int pachetId) { this.pachetId = pachetId; }
     public int getEvenimentId() { return evenimentId; }
