@@ -66,7 +66,7 @@ public class HateoasHelper {
         evenimente.forEach(this::addLinksToEveniment);
     }
 
-    //PACHETE
+    ///PACHETE
     public void addLinksToPachet(PachetDTO pachet) {
         pachet.add(linkTo(methodOn(PachetController.class)
                 .getPachetById(pachet.getId()))
@@ -74,7 +74,7 @@ public class HateoasHelper {
                 .withType("GET"));
 
         pachet.add(linkTo(methodOn(PachetController.class)
-                .getAllPachete(null, null))
+                .getAllPachete(null, null, null))
                 .withRel("all-packets")
                 .withType("GET"));
 

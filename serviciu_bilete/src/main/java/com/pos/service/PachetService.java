@@ -32,7 +32,7 @@ public class PachetService {
 
      // iau toate pachetele si  le convertesc în DTO
 
-    public List<PachetDTO> findAll(Integer page, Integer itemsPerPage) {
+    public List<PachetDTO> findAll(Integer page, Integer itemsPerPage, Integer availableTickets) {
 
         List<Pachet> pachete;
 
@@ -47,9 +47,19 @@ public class PachetService {
             pachete = pachetRepository.findAll();
         }
 
-        return pachete.stream()
+
+        List<PachetDTO> pachetDTOs = pachete.stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+
+        if (availableTickets != null) {
+            pachetDTOs = pachetDTOs.stream()
+                    .filter(dto -> dto.getBileteDisponibile() != null &&
+                            dto.getBileteDisponibile() >= availableTickets)
+                    .collect(Collectors.toList());
+        }
+
+        return pachetDTOs;
 
         //vechi V
         /*

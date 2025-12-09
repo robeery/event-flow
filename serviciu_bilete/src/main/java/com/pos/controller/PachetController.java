@@ -36,18 +36,19 @@ public class PachetController {
 
 
     // GET /api/event-manager/event-packets
-
+    //
     @GetMapping
     public ResponseEntity<CollectionModel<PachetDTO>> getAllPachete(
             @RequestParam(required = false) Integer page,
-            @RequestParam(name = "items_per_page", required = false) Integer itemsPerPage)
+            @RequestParam(name = "items_per_page", required = false) Integer itemsPerPage,
+            @RequestParam(name = "available_tickets", required = false) Integer availableTickets)
 
     {
         //valoare default
         if(page != null && itemsPerPage == null)
             itemsPerPage = 2;
 
-        List<PachetDTO> pachete = pachetService.findAll(page, itemsPerPage);
+        List<PachetDTO> pachete = pachetService.findAll(page, itemsPerPage, availableTickets);
 
         hateoasHelper.addLinksToPachete(pachete);
 
