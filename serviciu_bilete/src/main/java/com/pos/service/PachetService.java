@@ -6,6 +6,9 @@ import com.pos.exception.ResourceNotFoundException;
 import com.pos.models.Pachet;
 import com.pos.repository.PachetRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,11 +32,33 @@ public class PachetService {
 
      // iau toate pachetele si  le convertesc în DTO
 
-    public List<PachetDTO> findAll() {
+    public List<PachetDTO> findAll(Integer page, Integer itemsPerPage) {
+
+        List<Pachet> pachete;
+
+        if (page != null && itemsPerPage != null) {
+            // Paginare
+            // Spring foloseste indexare de la 0, dar userul de la 1
+            Pageable pageable = PageRequest.of(page - 1, itemsPerPage);
+            Page<Pachet> pachetPage = pachetRepository.findAll(pageable);
+            pachete = pachetPage.getContent();
+        } else {
+            // Toate pachetele toate pachetele fara paginare
+            pachete = pachetRepository.findAll();
+        }
+
+        return pachete.stream()
+                .map(this::convertToDTO)
+                .collect(Collectors.toList());
+
+        //vechi V
+        /*
         return pachetRepository.findAll()
                 .stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+
+         */
     }
 
 

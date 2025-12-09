@@ -11,11 +11,14 @@ import com.pos.service.PachetService;
 import com.pos.util.HateoasHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.CollectionModel;
+import org.springframework.hateoas.Link;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.pos.service.EvenimentService;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+
 import java.util.List;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.*;
@@ -35,17 +38,35 @@ public class PachetController {
     // GET /api/event-manager/event-packets
 
     @GetMapping
-    public ResponseEntity<CollectionModel<PachetDTO>> getAllPachete() {
-        List<PachetDTO> pachete = pachetService.findAll();
+    public ResponseEntity<CollectionModel<PachetDTO>> getAllPachete(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(name = "items_per_page", required = false) Integer itemsPerPage)
+
+    {
+        //valoare default
+        if(page != null && itemsPerPage == null)
+            itemsPerPage = 2;
+
+        List<PachetDTO> pachete = pachetService.findAll(page, itemsPerPage);
 
         hateoasHelper.addLinksToPachete(pachete);
 
         CollectionModel<PachetDTO> collectionModel = CollectionModel.of(pachete);
 
+        //  Link self --> exact request-ul cu parametri
+        Link selfLink = Link.of(ServletUriComponentsBuilder.fromCurrentRequest().toUriString())
+                .withSelfRel()
+                .withType("GET");
+
+        collectionModel.add(selfLink);
+
+        /*
+        //revin dupa sa vad cum fac pana la urma aici
         collectionModel.add(linkTo(methodOn(PachetController.class)
-                .getAllPachete())
+                .getAllPachete(page, itemsPerPage)) //sau gol/null
                 .withSelfRel()
                 .withType("GET"));
+        */
 
         collectionModel.add(linkTo(methodOn(PachetController.class)
                 .createPachet(null))
