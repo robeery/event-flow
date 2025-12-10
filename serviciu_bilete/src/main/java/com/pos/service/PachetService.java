@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -32,21 +33,28 @@ public class PachetService {
 
      // iau toate pachetele si  le convertesc în DTO
 
-    public List<PachetDTO> findAll(Integer page, Integer itemsPerPage, Integer availableTickets) {
+    public List<PachetDTO> findAll(Integer page, Integer itemsPerPage, Integer availableTickets, String type) {
 
         List<Pachet> pachete;
-
-        if (page != null && itemsPerPage != null) {
-            // Paginare
-            // Spring foloseste indexare de la 0, dar userul de la 1
-            Pageable pageable = PageRequest.of(page - 1, itemsPerPage);
-            Page<Pachet> pachetPage = pachetRepository.findAll(pageable);
-            pachete = pachetPage.getContent();
-        } else {
-            // Toate pachetele toate pachetele fara paginare
+        if (type != null && !type.trim().isEmpty()) {
+            pachete = pachetRepository.findByDescriereContainingIgnoreCase(type);
+        }
+        else
+        {
             pachete = pachetRepository.findAll();
         }
 
+        //paginare
+        if (page != null && itemsPerPage != null) {
+            int startIndex = (page - 1) * itemsPerPage;
+            int endIndex = Math.min(startIndex + itemsPerPage, pachete.size());
+
+            if (startIndex < pachete.size()) {
+                pachete = pachete.subList(startIndex, endIndex);
+            } else {
+                pachete = Collections.emptyList();
+            }
+        }
 
         List<PachetDTO> pachetDTOs = pachete.stream()
                 .map(this::convertToDTO)

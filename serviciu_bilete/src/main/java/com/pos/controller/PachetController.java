@@ -41,14 +41,15 @@ public class PachetController {
     public ResponseEntity<CollectionModel<PachetDTO>> getAllPachete(
             @RequestParam(required = false) Integer page,
             @RequestParam(name = "items_per_page", required = false) Integer itemsPerPage,
-            @RequestParam(name = "available_tickets", required = false) Integer availableTickets)
+            @RequestParam(name = "available_tickets", required = false) Integer availableTickets,
+            @RequestParam(required = false) String type)
 
     {
         //valoare default
         if(page != null && itemsPerPage == null)
             itemsPerPage = 2;
 
-        List<PachetDTO> pachete = pachetService.findAll(page, itemsPerPage, availableTickets);
+        List<PachetDTO> pachete = pachetService.findAll(page, itemsPerPage, availableTickets, type);
 
         hateoasHelper.addLinksToPachete(pachete);
 

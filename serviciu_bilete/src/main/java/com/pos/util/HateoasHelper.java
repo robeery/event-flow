@@ -74,7 +74,7 @@ public class HateoasHelper {
                 .withType("GET"));
 
         pachet.add(linkTo(methodOn(PachetController.class)
-                .getAllPachete(null, null, null))
+                .getAllPachete(null, null, null, null))
                 .withRel("all-packets")
                 .withType("GET"));
 
