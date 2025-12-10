@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -148,5 +149,66 @@ public class BiletService {
                 .stream()
                 .map(this::convertToDTO)
                 .collect(Collectors.toList());
+    }
+
+    // PUT - Creeaza sau actualizeaza un bilet cu cod explicit
+    //daca exista, actualizeaza
+    //daca nu exista, creaza
+
+    @Transactional
+    public BiletDTO createOrUpdate(String cod, BiletDTO biletDTO) {
+        // Validare: fie eveniment, fie pachet (nu ambele, nu niciunul)
+        if (biletDTO.getEvenimentId() == null && biletDTO.getPachetId() == null) {
+            throw new IllegalArgumentException("Biletul trebuie asociat unui eveniment sau unui pachet");
+        }
+        if (biletDTO.getEvenimentId() != null && biletDTO.getPachetId() != null) {
+            throw new BusinessLogicException("Biletul nu poate fi asociat simultan unui eveniment si unui pachet");
+        }
+
+
+        Optional<Bilet> existingBiletOpt = biletRepository.findById(cod);
+
+        Bilet bilet;
+        if (existingBiletOpt.isPresent()) {
+            //  UPDATE
+            bilet = existingBiletOpt.get();
+
+
+            if (biletDTO.getEvenimentId() != null) {
+                Eveniment eveniment = evenimentRepository.findById(biletDTO.getEvenimentId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Eveniment", "id", biletDTO.getEvenimentId()));
+                bilet.setEveniment(eveniment);
+                bilet.setPachet(null);
+            } else {
+                Pachet pachet = pachetRepository.findById(biletDTO.getPachetId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Pachet", "id", biletDTO.getPachetId()));
+                bilet.setPachet(pachet);
+                bilet.setEveniment(null);
+            }
+        } else {
+            // CREATE
+            bilet = new Bilet();
+            bilet.setCod(cod);
+
+            if (biletDTO.getEvenimentId() != null) {
+                Eveniment eveniment = evenimentRepository.findById(biletDTO.getEvenimentId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Eveniment", "id", biletDTO.getEvenimentId()));
+                bilet.setEveniment(eveniment);
+                bilet.setPachet(null);
+            } else {
+                Pachet pachet = pachetRepository.findById(biletDTO.getPachetId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Pachet", "id", biletDTO.getPachetId()));
+                bilet.setPachet(pachet);
+                bilet.setEveniment(null);
+            }
+        }
+
+
+        Bilet savedBilet = biletRepository.save(bilet);
+        return convertToDTO(savedBilet);
+    }
+
+    public boolean existsByCod(String cod) {
+        return biletRepository.existsById(cod);
     }
 }

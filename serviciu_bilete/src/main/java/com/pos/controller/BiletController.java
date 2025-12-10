@@ -53,6 +53,32 @@ public class BiletController {
         return ResponseEntity.noContent().build();
     }
 
+
+     ///PUT /api/event-manager/tickets/{cod}
+     //create/update cu cod explicit
+     //exista -> update (200)
+     //nu exista -> create (201)
+
+    @PutMapping("/{cod}")
+    public ResponseEntity<BiletDTO> createOrUpdateBilet(
+            @PathVariable String cod,
+            @RequestBody BiletDTO biletDTO) {
+
+
+        boolean exists = biletService.existsByCod(cod);
+
+
+        BiletDTO savedBilet = biletService.createOrUpdate(cod, biletDTO);
+
+
+        hateoasHelper.addLinksToBilet(savedBilet);
+
+
+        HttpStatus status = exists ? HttpStatus.OK : HttpStatus.CREATED;
+
+        return ResponseEntity.status(status).body(savedBilet);
+    }
+
     //ma mai gandesc daca vreau sau nu
     //PUT - TO DO
 }

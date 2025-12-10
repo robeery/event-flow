@@ -133,6 +133,14 @@ public class HateoasHelper {
                     .withRel("packet")
                     .withType("GET"));
         }
+
+
+
+        bilet.add(linkTo(methodOn(BiletController.class)
+                .createOrUpdateBilet(bilet.getCod(), null))
+                .withRel("update")
+                .withType("PUT"));
+
     }
 
     public void addLinksToBilete(List<BiletDTO> bilete) {
