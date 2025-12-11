@@ -38,6 +38,8 @@ public class PachetController {
 
     // GET /api/event-manager/event-packets
     //
+    @Operation(summary = "Retrieve all event packages",
+               description = "Returns a collection of all event packages with optional pagination and filtering. Supports query parameters: ?page=..., ?items_per_page=..., ?available_tickets=..., ?type=...")
     @GetMapping
     public ResponseEntity<CollectionModel<PachetDTO>> getAllPachete(
             @RequestParam(required = false) Integer page,
@@ -82,6 +84,8 @@ public class PachetController {
 
      // GET /api/event-manager/event-packets/{id}
 
+    @Operation(summary = "Retrieve event package by ID",
+               description = "Returns a single event package identified by its unique ID with HATEOAS links")
     @GetMapping("/{id}")
     public ResponseEntity<PachetDTO> getPachetById(@PathVariable Integer id) {
         PachetDTO pachet = pachetService.findById(id);
@@ -92,6 +96,8 @@ public class PachetController {
 
      //POST /api/event-manager/event-packets
 
+    @Operation(summary = "Create a new event package",
+               description = "Creates a new event package with the provided details. Returns the created package with HTTP 201 status")
     @PostMapping
     public ResponseEntity<PachetDTO> createPachet(@RequestBody PachetDTO pachetDTO) {
         PachetDTO createdPachet = pachetService.create(pachetDTO);
@@ -101,8 +107,8 @@ public class PachetController {
 
 
     //  DELETE /api/event-manager/event-packets/{id}
-    @Operation(summary = "Sterge un pachet",
-            description = "Sterge pachetul cu {id} din url")
+    @Operation(summary = "Delete an event package",
+               description = "Deletes the event package identified by {id} from the URL")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePachet(@PathVariable Integer id) {
         pachetService.delete(id);
@@ -112,6 +118,8 @@ public class PachetController {
 
      //PUT /api/event-manager/event-packets/{id}
 
+    @Operation(summary = "Update or create event package with explicit ID",
+               description = "Updates an existing event package or creates a new one with the specified ID. Returns HTTP 200 if updated, HTTP 201 if created")
     @PutMapping("/{id}")
     public ResponseEntity<PachetDTO> updatePachet(
             @PathVariable Integer id,
@@ -130,6 +138,8 @@ public class PachetController {
      * GET /api/event-manager/event-packets/{id}/tickets
      * Returneaza toate biletele pentru un pachet
      */
+    @Operation(summary = "Retrieve all tickets for an event package",
+               description = "Returns a collection of all tickets associated with the specified event package ID")
     @GetMapping("/{id}/tickets")
     public ResponseEntity<CollectionModel<BiletDTO>> getBileteForPachet(@PathVariable Integer id) {
 
@@ -165,6 +175,8 @@ public class PachetController {
      * GET /api/event-manager/event-packets/{id}/tickets/{ticketCod}
      * Returneaza un bilet specific pentru un pachet
      */
+    @Operation(summary = "Retrieve specific ticket for an event package",
+               description = "Returns a single ticket identified by its code that belongs to the specified event package ID")
     @GetMapping("/{id}/tickets/{ticketCod}")
     public ResponseEntity<BiletDTO> getBiletForPachet(
             @PathVariable Integer id,
@@ -190,6 +202,8 @@ public class PachetController {
      * Creeaza un bilet pentru acest pachet
      * body poate fi gol {} sau cu altele pe viitor, vad
      */
+    @Operation(summary = "Create a ticket for an event package",
+               description = "Creates a new ticket associated with the specified event package ID. Request body is optional and can be empty. Returns HTTP 201 status")
     @PostMapping("/{id}/tickets")
     public ResponseEntity<BiletDTO> createBiletForPachet(
             @PathVariable Integer id,
@@ -214,6 +228,8 @@ public class PachetController {
     GET /api/event-manager/event-packets/{id}/events
      returneaza evenimentele incluse in pachet
      */
+    @Operation(summary = "Retrieve all events in an event package",
+               description = "Returns a collection of all events included in the specified event package ID")
     @GetMapping("/{id}/events")
     public ResponseEntity<CollectionModel<EvenimentDTO>> getEvenimenteForPachet(@PathVariable Integer id) {
         List<EvenimentDTO> evenimente = pachetEvenimentService.findEvenimenteForPachet(id);
@@ -244,6 +260,8 @@ public class PachetController {
      * Creeaza un eveniment NOU si il adauga in acest pachet
      * Body: EvenimentDTO complet
      */
+    @Operation(summary = "Create a new event and add to package",
+               description = "Creates a new event with the provided details and automatically associates it with the specified event package ID. Returns HTTP 201 status")
     @PostMapping("/{id}/events")
     public ResponseEntity<EvenimentDTO> createEvenimentInPachet(
             @PathVariable Integer id,
@@ -280,8 +298,8 @@ public class PachetController {
      * sterge evenimentul specificat din acest pachet
      */
 
-    @Operation(summary = "Sterge asocierea dintre eveniment si pachet",
-            description = "Scoate evenimentul cu {id} din url din pachetul {pachetuId} din url")
+    @Operation(summary = "Remove association between event and package",
+               description = "Removes the event with {evenimentId} from the URL from the package with {id} from the URL")
 
     @DeleteMapping("/{id}/events/{evenimentId}")
     public ResponseEntity<Void> removeEvenimentFromPachet(

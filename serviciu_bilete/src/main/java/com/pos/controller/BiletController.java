@@ -3,6 +3,7 @@ package com.pos.controller;
 import com.pos.dto.BiletDTO;
 import com.pos.service.BiletService;
 import com.pos.util.HateoasHelper;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
@@ -21,6 +22,8 @@ public class BiletController {
     private final BiletService biletService;
     private final HateoasHelper hateoasHelper;
 
+    @Operation(summary = "Retrieve all tickets",
+               description = "Returns a collection of all tickets in the system with HATEOAS links for navigation and ticket creation")
     @GetMapping
     public ResponseEntity<CollectionModel<BiletDTO>> getAllBilete() {
         List<BiletDTO> bilete = biletService.findAll();
@@ -33,6 +36,8 @@ public class BiletController {
         return ResponseEntity.ok(collectionModel);
     }
 
+    @Operation(summary = "Retrieve ticket by code",
+               description = "Returns a single ticket identified by its unique code with HATEOAS links")
     @GetMapping("/{cod}")
     public ResponseEntity<BiletDTO> getBiletByCod(@PathVariable String cod) {
         BiletDTO bilet = biletService.findByCod(cod);
@@ -40,6 +45,8 @@ public class BiletController {
         return ResponseEntity.ok(bilet);
     }
 
+    @Operation(summary = "Create a new ticket",
+               description = "Creates a new ticket with an auto-generated unique code. Returns the created ticket with HTTP 201 status")
     @PostMapping
     public ResponseEntity<BiletDTO> createBilet(@RequestBody BiletDTO biletDTO) {
         BiletDTO createdBilet = biletService.create(biletDTO);
@@ -47,6 +54,8 @@ public class BiletController {
         return ResponseEntity.status(HttpStatus.CREATED).body(createdBilet);
     }
 
+    @Operation(summary = "Delete a ticket",
+               description = "Deletes a ticket identified by its unique code. Returns HTTP 204 No Content on success")
     @DeleteMapping("/{cod}")
     public ResponseEntity<Void> deleteBilet(@PathVariable String cod) {
         biletService.delete(cod);
@@ -59,6 +68,8 @@ public class BiletController {
      //exista -> update (200)
      //nu exista -> create (201)
 
+    @Operation(summary = "Create or update ticket with explicit code",
+               description = "Creates a new ticket with the specified code or updates an existing one. Returns HTTP 200 if updated, HTTP 201 if created")
     @PutMapping("/{cod}")
     public ResponseEntity<BiletDTO> createOrUpdateBilet(
             @PathVariable String cod,
