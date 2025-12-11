@@ -9,6 +9,7 @@ import com.pos.service.BiletService;
 import com.pos.service.PachetEvenimentService;
 import com.pos.service.PachetService;
 import com.pos.util.HateoasHelper;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.Link;
@@ -100,7 +101,8 @@ public class PachetController {
 
 
     //  DELETE /api/event-manager/event-packets/{id}
-
+    @Operation(summary = "Sterge un pachet",
+            description = "Sterge pachetul cu {id} din url")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePachet(@PathVariable Integer id) {
         pachetService.delete(id);
@@ -277,6 +279,10 @@ public class PachetController {
      * DELETE /api/event-manager/event-packets/{id}/events/{evenimentId}
      * sterge evenimentul specificat din acest pachet
      */
+
+    @Operation(summary = "Sterge asocierea dintre eveniment si pachet",
+            description = "Scoate evenimentul cu {id} din url din pachetul {pachetuId} din url")
+
     @DeleteMapping("/{id}/events/{evenimentId}")
     public ResponseEntity<Void> removeEvenimentFromPachet(
             @PathVariable Integer id,

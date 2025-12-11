@@ -8,6 +8,7 @@ import com.pos.dto.EvenimentDTO;
 import com.pos.service.EvenimentService;
 import com.pos.service.PachetEvenimentService;
 import com.pos.util.HateoasHelper;
+import io.swagger.v3.oas.annotations.Operation;
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.Link;
@@ -264,6 +265,10 @@ public class EvenimentController {
      * Asociaza acest eveniment existent intr-un pachet
      * Body: { "pachetId": 2 }
      */
+
+    @Operation(summary = "Asociaza eveniment unui pachet",
+            description = "Asociaza/baga evenimentul asociat {id} din URL cu pachetul cu {pachetId} din body")
+
     @PostMapping("/{id}/event-packets")
     public ResponseEntity<PachetEvenimentCreateDTO> addEvenimentToPachet(
             @PathVariable Integer id,
@@ -286,6 +291,10 @@ public class EvenimentController {
      * DELETE /api/event-manager/events/{id}/event-packets/{pachetId}
      * sterge acest eveniment din pachetul specificat
      */
+
+    @Operation(summary = "Sterge asocierea dintre eveniment si pachet",
+            description = "Scoate evenimentul cu {id} din url din pachetul {pachetuId} din url")
+
     @DeleteMapping("/{id}/event-packets/{pachetId}")
     public ResponseEntity<Void> removeEvenimentFromPachet(
             @PathVariable Integer id,
