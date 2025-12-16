@@ -4,6 +4,7 @@ import com.pos.dto.BiletDTO;
 import com.pos.service.BiletService;
 import com.pos.util.HateoasHelper;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
@@ -39,7 +40,9 @@ public class BiletController {
     @Operation(summary = "Retrieve ticket by code",
                description = "Returns a single ticket identified by its unique code with HATEOAS links")
     @GetMapping("/{cod}")
-    public ResponseEntity<BiletDTO> getBiletByCod(@PathVariable String cod) {
+    public ResponseEntity<BiletDTO> getBiletByCod(
+            @Parameter(description = "Unique ticket code identifier", example = "BILET-a1b2c3d4")
+            @PathVariable String cod) {
         BiletDTO bilet = biletService.findByCod(cod);
         hateoasHelper.addLinksToBilet(bilet);
         return ResponseEntity.ok(bilet);
@@ -57,7 +60,9 @@ public class BiletController {
     @Operation(summary = "Delete a ticket",
                description = "Deletes a ticket identified by its unique code. Returns HTTP 204 No Content on success")
     @DeleteMapping("/{cod}")
-    public ResponseEntity<Void> deleteBilet(@PathVariable String cod) {
+    public ResponseEntity<Void> deleteBilet(
+            @Parameter(description = "Unique ticket code identifier", example = "BILET-a1b2c3d4")
+            @PathVariable String cod) {
         biletService.delete(cod);
         return ResponseEntity.noContent().build();
     }
@@ -72,6 +77,7 @@ public class BiletController {
                description = "Creates a new ticket with the specified code or updates an existing one. Returns HTTP 200 if updated, HTTP 201 if created")
     @PutMapping("/{cod}")
     public ResponseEntity<BiletDTO> createOrUpdateBilet(
+            @Parameter(description = "Unique ticket code to create or update", example = "BILET-a1b2c3d4")
             @PathVariable String cod,
             @RequestBody BiletDTO biletDTO) {
 

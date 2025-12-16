@@ -9,6 +9,7 @@ import com.pos.service.EvenimentService;
 import com.pos.service.PachetEvenimentService;
 import com.pos.util.HateoasHelper;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.Link;
@@ -46,7 +47,9 @@ public class EvenimentController {
                description = "Returns a collection of all events with optional filtering by location or name. Supports query parameters: ?location=... or ?name=...")
     @GetMapping
     public ResponseEntity<CollectionModel<EvenimentDTO>> getAllEvenimente(
+            @Parameter(description = "Filter events by location", example = "Bucharest")
             @RequestParam(required = false) String location,
+            @Parameter(description = "Filter events by name", example = "Summer Concert")
             @RequestParam(required = false) String name)
     {
         List<EvenimentDTO> evenimente = evenimentService.findAll(location, name);
@@ -102,7 +105,9 @@ public class EvenimentController {
     @Operation(summary = "Retrieve event by ID",
                description = "Returns a single event identified by its unique ID with HATEOAS links")
     @GetMapping("/{id}")
-    public ResponseEntity<EvenimentDTO> getEvenimentById(@PathVariable Integer id) {
+    public ResponseEntity<EvenimentDTO> getEvenimentById(
+            @Parameter(description = "Event ID", example = "1")
+            @PathVariable Integer id) {
         EvenimentDTO eveniment = evenimentService.findById(id);
         hateoasHelper.addLinksToEveniment(eveniment);
         return ResponseEntity.ok(eveniment);
@@ -129,7 +134,9 @@ public class EvenimentController {
     @Operation(summary = "Delete an event",
                description = "Deletes an event identified by its ID. Returns HTTP 204 No Content on success")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteEveniment(@PathVariable Integer id) {
+    public ResponseEntity<Void> deleteEveniment(
+            @Parameter(description = "Event ID", example = "1")
+            @PathVariable Integer id) {
         evenimentService.delete(id);
         return ResponseEntity.noContent().build();
     }
@@ -141,6 +148,7 @@ public class EvenimentController {
                description = "Updates an existing event or creates a new one with the specified ID. Returns HTTP 200 if updated, HTTP 201 if created")
     @PutMapping("/{id}")
     public ResponseEntity<EvenimentDTO> updateEveniment(
+            @Parameter(description = "Event ID", example = "1")
             @PathVariable Integer id,
             @RequestBody EvenimentDTO evenimentDTO) {
 
@@ -163,8 +171,10 @@ public class EvenimentController {
     @Operation(summary = "Retrieve all tickets for an event",
                description = "Returns a collection of all tickets associated with the specified event ID")
     @GetMapping("/{id}/tickets")
-    public ResponseEntity<CollectionModel<BiletDTO>> getBileteForEveniment(@PathVariable Integer id) {
-        // Verifica dacă evenimentul exista
+    public ResponseEntity<CollectionModel<BiletDTO>> getBileteForEveniment(
+            @Parameter(description = "Event ID", example = "1")
+            @PathVariable Integer id) {
+        // Verifica daca evenimentul exista
         evenimentService.findById(id);
 
         List<BiletDTO> bilete = biletService.findByEvenimentId(id);
@@ -201,7 +211,9 @@ public class EvenimentController {
                description = "Returns a single ticket identified by its code that belongs to the specified event ID")
     @GetMapping("/{id}/tickets/{ticketCod}")
     public ResponseEntity<BiletDTO> getBiletForEveniment(
+            @Parameter(description = "Event ID", example = "1")
             @PathVariable Integer id,
+            @Parameter(description = "Ticket code", example = "BILET-a1b2c3d4")
             @PathVariable String ticketCod) {
 
 
@@ -228,6 +240,7 @@ public class EvenimentController {
                description = "Creates a new ticket associated with the specified event ID. Request body is optional and can be empty. Returns HTTP 201 status")
     @PostMapping("/{id}/tickets")
     public ResponseEntity<BiletDTO> createBiletForEveniment(
+            @Parameter(description = "Event ID", example = "1")
             @PathVariable Integer id,
             @RequestBody(required = false) BiletDTO biletDTO) {
 
@@ -254,7 +267,9 @@ public class EvenimentController {
     @Operation(summary = "Retrieve event packages containing an event",
                description = "Returns a collection of all event packages that contain the specified event ID")
     @GetMapping("/{id}/event-packets")
-    public ResponseEntity<CollectionModel<PachetDTO>> getPacheteForEveniment(@PathVariable Integer id) {
+    public ResponseEntity<CollectionModel<PachetDTO>> getPacheteForEveniment(
+            @Parameter(description = "Event ID", example = "1")
+            @PathVariable Integer id) {
         List<PachetDTO> pachete = pachetEvenimentService.findPacheteForEveniment(id);
         hateoasHelper.addLinksToPachete(pachete);
 
@@ -289,6 +304,7 @@ public class EvenimentController {
 
     @PostMapping("/{id}/event-packets")
     public ResponseEntity<PachetEvenimentCreateDTO> addEvenimentToPachet(
+            @Parameter(description = "Event ID", example = "1")
             @PathVariable Integer id,
             @RequestBody PachetEvenimentCreateDTO dto) {
 
@@ -315,7 +331,9 @@ public class EvenimentController {
 
     @DeleteMapping("/{id}/event-packets/{pachetId}")
     public ResponseEntity<Void> removeEvenimentFromPachet(
+            @Parameter(description = "Event ID", example = "1")
             @PathVariable Integer id,
+            @Parameter(description = "Package ID", example = "2")
             @PathVariable Integer pachetId) {
 
         pachetEvenimentService.removePachetFromEveniment(id, pachetId);

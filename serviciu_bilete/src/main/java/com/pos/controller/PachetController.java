@@ -10,6 +10,7 @@ import com.pos.service.PachetEvenimentService;
 import com.pos.service.PachetService;
 import com.pos.util.HateoasHelper;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.Link;
@@ -42,9 +43,13 @@ public class PachetController {
                description = "Returns a collection of all event packages with optional pagination and filtering. Supports query parameters: ?page=..., ?items_per_page=..., ?available_tickets=..., ?type=...")
     @GetMapping
     public ResponseEntity<CollectionModel<PachetDTO>> getAllPachete(
+            @Parameter(description = "Page number for pagination", example = "1")
             @RequestParam(required = false) Integer page,
+            @Parameter(description = "Number of items per page (default is 2)", example = "3")
             @RequestParam(name = "items_per_page", required = false) Integer itemsPerPage,
+            @Parameter(description = "Filter by available tickets count", example = "10")
             @RequestParam(name = "available_tickets", required = false) Integer availableTickets,
+            @Parameter(description = "Filter by package type", example = "premium")
             @RequestParam(required = false) String type)
 
     {
@@ -87,7 +92,9 @@ public class PachetController {
     @Operation(summary = "Retrieve event package by ID",
                description = "Returns a single event package identified by its unique ID with HATEOAS links")
     @GetMapping("/{id}")
-    public ResponseEntity<PachetDTO> getPachetById(@PathVariable Integer id) {
+    public ResponseEntity<PachetDTO> getPachetById(
+            @Parameter(description = "Package ID", example = "1")
+            @PathVariable Integer id) {
         PachetDTO pachet = pachetService.findById(id);
         hateoasHelper.addLinksToPachet(pachet);
         return ResponseEntity.ok(pachet);
@@ -110,7 +117,9 @@ public class PachetController {
     @Operation(summary = "Delete an event package",
                description = "Deletes the event package identified by {id} from the URL")
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePachet(@PathVariable Integer id) {
+    public ResponseEntity<Void> deletePachet(
+            @Parameter(description = "Package ID", example = "1")
+            @PathVariable Integer id) {
         pachetService.delete(id);
         return ResponseEntity.noContent().build();
     }
@@ -122,6 +131,7 @@ public class PachetController {
                description = "Updates an existing event package or creates a new one with the specified ID. Returns HTTP 200 if updated, HTTP 201 if created")
     @PutMapping("/{id}")
     public ResponseEntity<PachetDTO> updatePachet(
+            @Parameter(description = "Package ID", example = "1")
             @PathVariable Integer id,
             @RequestBody PachetDTO pachetDTO) {
 
@@ -141,7 +151,9 @@ public class PachetController {
     @Operation(summary = "Retrieve all tickets for an event package",
                description = "Returns a collection of all tickets associated with the specified event package ID")
     @GetMapping("/{id}/tickets")
-    public ResponseEntity<CollectionModel<BiletDTO>> getBileteForPachet(@PathVariable Integer id) {
+    public ResponseEntity<CollectionModel<BiletDTO>> getBileteForPachet(
+            @Parameter(description = "Package ID", example = "1")
+            @PathVariable Integer id) {
 
         pachetService.findById(id);
 
@@ -179,7 +191,9 @@ public class PachetController {
                description = "Returns a single ticket identified by its code that belongs to the specified event package ID")
     @GetMapping("/{id}/tickets/{ticketCod}")
     public ResponseEntity<BiletDTO> getBiletForPachet(
+            @Parameter(description = "Package ID", example = "1")
             @PathVariable Integer id,
+            @Parameter(description = "Ticket code", example = "BILET-a1b2c3d4")
             @PathVariable String ticketCod) {
 
 
@@ -206,6 +220,7 @@ public class PachetController {
                description = "Creates a new ticket associated with the specified event package ID. Request body is optional and can be empty. Returns HTTP 201 status")
     @PostMapping("/{id}/tickets")
     public ResponseEntity<BiletDTO> createBiletForPachet(
+            @Parameter(description = "Package ID", example = "1")
             @PathVariable Integer id,
             @RequestBody(required = false) BiletDTO biletDTO) {
 
@@ -231,7 +246,9 @@ public class PachetController {
     @Operation(summary = "Retrieve all events in an event package",
                description = "Returns a collection of all events included in the specified event package ID")
     @GetMapping("/{id}/events")
-    public ResponseEntity<CollectionModel<EvenimentDTO>> getEvenimenteForPachet(@PathVariable Integer id) {
+    public ResponseEntity<CollectionModel<EvenimentDTO>> getEvenimenteForPachet(
+            @Parameter(description = "Package ID", example = "1")
+            @PathVariable Integer id) {
         List<EvenimentDTO> evenimente = pachetEvenimentService.findEvenimenteForPachet(id);
         hateoasHelper.addLinksToEvenimente(evenimente);
 
@@ -264,6 +281,7 @@ public class PachetController {
                description = "Creates a new event with the provided details and automatically associates it with the specified event package ID. Returns HTTP 201 status")
     @PostMapping("/{id}/events")
     public ResponseEntity<EvenimentDTO> createEvenimentInPachet(
+            @Parameter(description = "Package ID", example = "1")
             @PathVariable Integer id,
             @RequestBody EvenimentDTO evenimentDTO) {
 
@@ -303,7 +321,9 @@ public class PachetController {
 
     @DeleteMapping("/{id}/events/{evenimentId}")
     public ResponseEntity<Void> removeEvenimentFromPachet(
+            @Parameter(description = "Package ID", example = "1")
             @PathVariable Integer id,
+            @Parameter(description = "Event ID", example = "2")
             @PathVariable Integer evenimentId) {
 
         pachetEvenimentService.removeEvenimentFromPachet(id, evenimentId);
