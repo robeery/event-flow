@@ -5,6 +5,7 @@ package com.pos.serviciu_clienti.service
 import com.pos.serviciu_clienti.dto.ClientRequestDTO
 import com.pos.serviciu_clienti.dto.ClientResponseDTO
 import com.pos.serviciu_clienti.dto.ClientSummaryDTO
+import com.pos.serviciu_clienti.dto.CumparaBiletDTO
 import com.pos.serviciu_clienti.model.Client
 import com.pos.serviciu_clienti.repository.ClientRepository
 import org.springframework.data.domain.Page
@@ -15,7 +16,8 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 @Transactional
 class ClientService(
-    private val clientRepository: ClientRepository
+    private val clientRepository: ClientRepository,
+    private val eventsServiceClient: EventsServiceClient
 ) {
 
     // CREATE - Creeaza client nou
@@ -39,13 +41,13 @@ class ClientService(
     // READ - gaseste client dupa id
     fun getClientById(id: String): Client {
         return clientRepository.findById(id)
-            .orElseThrow { NoSuchElementException("Clientul cu ID '$id' nu a fost găsit") }
+            .orElseThrow { NoSuchElementException("Clientul cu ID '$id' nu a fost gasit") }
     }
 
     // READ - -||- dupa mail
     fun getClientByEmail(email: String): Client {
         return clientRepository.findByEmail(email)
-            .orElseThrow { NoSuchElementException("Clientul cu email '$email' nu a fost găsit") }
+            .orElseThrow { NoSuchElementException("Clientul cu email '$email' nu a fost gasit") }
     }
 
     // READ - toti clientii cu paginare
@@ -90,36 +92,43 @@ class ClientService(
         clientRepository.deleteById(id)
     }
 
-    // BILETE - Adauga bilet la client
-    fun addBiletToClient(clientId: String, codBilet: String): Client {
-        val client = getClientById(clientId)
-
-        // Verifica daca biletul nu e deja adaugat
-        if (client.bileteAchizitionate.contains(codBilet)) {
-            throw IllegalArgumentException("Biletul '$codBilet' a fost deja adaugat la acest client")
+    // BILETE - Cumpara bilet (ACTUALIZAT)
+    fun cumparaBilet(clientId: String, dto: CumparaBiletDTO): Client {
+        // Validare DTO
+        if (!dto.isValid()) {
+            throw IllegalArgumentException("Trebuie sa specifici fie evenimentId, fie pachetId (nu ambele, nu niciunul)")
         }
 
+        val client = getClientById(clientId)
+
+        // Genereaza cod bilet
+        val codBilet = eventsServiceClient.generateCodBilet()
+
+        // Creeaza biletul in Events Service
+        eventsServiceClient.createBilet(codBilet, dto.evenimentId, dto.pachetId)
+
+        // Adauga codul biletului la client
         client.bileteAchizitionate.add(codBilet)
+
         return clientRepository.save(client)
     }
 
     // BILETE - Sterge bilet de la client
-    fun removeBiletFromClient(clientId: String, codBilet: String): Client {
+    fun returneazaBilet(clientId: String, codBilet: String): Client {
         val client = getClientById(clientId)
 
-        if (!client.bileteAchizitionate.remove(codBilet)) {
+        if (!client.bileteAchizitionate.contains(codBilet)) {
             throw NoSuchElementException("Biletul '$codBilet' nu exista la acest client")
         }
+
+        // Sterge biletul din Events Service
+        eventsServiceClient.deleteBilet(codBilet)
+
+        // Sterge din lista clientului
+        client.bileteAchizitionate.remove(codBilet)
 
         return clientRepository.save(client)
     }
 
-    // BILETE - Gaseste toti clienții care au un anumit bilet
-    //voi vedea
-    /*
-    fun getClientsByBilet(codBilet: String): List<Client> {
-        return clientRepository.findByBileteAchizitionateContaining(codBilet)
-    }
 
-     */
 }

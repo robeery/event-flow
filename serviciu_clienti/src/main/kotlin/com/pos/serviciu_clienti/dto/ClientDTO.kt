@@ -39,7 +39,13 @@ data class ClientSummaryDTO(
 )
 
 // DTO pentru adaugare bilet
-data class AddBiletDTO(
-    @field:NotBlank(message = "Codul biletului este obligatoriu")
-    val codBilet: String
-)
+data class CumparaBiletDTO(
+    val evenimentId: Long? = null,
+    val pachetId: Long? = null
+) {
+
+    fun isValid(): Boolean {
+        return (evenimentId != null && pachetId == null) ||
+                (evenimentId == null && pachetId != null)
+    }
+}

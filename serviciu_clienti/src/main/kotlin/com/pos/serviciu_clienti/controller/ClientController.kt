@@ -85,24 +85,24 @@ class ClientController(
         return ResponseEntity.noContent().build()
     }
 
-    // BILETE - POST /api/clients/{id}/bilete
+    // BILETE - POST /api/clients/{id}/bilete (cumpara bilet)
     @PostMapping("/{id}/bilete")
-    fun addBilet(
+    fun cumparaBilet(
         @PathVariable id: String,
-        @Valid @RequestBody dto: AddBiletDTO
+        @RequestBody dto: CumparaBiletDTO
     ): ResponseEntity<ClientResponseDTO> {
-        val client = clientService.addBiletToClient(id, dto.codBilet)
+        val client = clientService.cumparaBilet(id, dto)
         val response = toResponseDTO(client)
-        return ResponseEntity.ok(response)
+        return ResponseEntity.status(HttpStatus.CREATED).body(response)
     }
 
-    // BILETE - DELETE /api/clients/{id}/bilete/{codBilet}
+    // BILETE - DELETE /api/clients/{id}/bilete/{codBilet} (sterge/returneaz bilet)
     @DeleteMapping("/{id}/bilete/{codBilet}")
-    fun removeBilet(
+    fun returneazaBilet(
         @PathVariable id: String,
         @PathVariable codBilet: String
     ): ResponseEntity<ClientResponseDTO> {
-        val client = clientService.removeBiletFromClient(id, codBilet)
+        val client = clientService.returneazaBilet(id, codBilet)
         val response = toResponseDTO(client)
         return ResponseEntity.ok(response)
     }
