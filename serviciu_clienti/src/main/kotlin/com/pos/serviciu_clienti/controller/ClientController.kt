@@ -156,4 +156,29 @@ class ClientController(
 
         return links
     }
+
+
+    // BILETE - GET /api/clients/{id}/bilete (format lung)
+
+    @GetMapping("/{id}/bilete")
+    fun getBileteClient(@PathVariable id: String): ResponseEntity<Map<String, Any>> {
+        val client = clientService.getClientById(id)
+        val bileteDetaliate = clientService.getBileteDetaliate(id)
+
+        val selfLink = linkTo(methodOn(ClientController::class.java).getBileteClient(id)).withSelfRel()
+        val clientLink = linkTo(methodOn(ClientController::class.java).getClientById(id)).withRel("client")
+
+        val response: Map<String, Any> = mapOf(
+            "clientId" to (client.id ?: ""),
+            "clientEmail" to client.email,
+            "totalBilete" to bileteDetaliate.size,
+            "bilete" to bileteDetaliate,
+            "links" to mapOf(
+                "self" to selfLink.href,
+                "client" to clientLink.href
+            )
+        )
+
+        return ResponseEntity.ok(response)
+    }
 }

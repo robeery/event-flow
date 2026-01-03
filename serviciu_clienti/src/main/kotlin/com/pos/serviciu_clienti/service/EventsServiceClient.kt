@@ -2,6 +2,7 @@ package com.pos.serviciu_clienti.service
 
 
 
+import com.fasterxml.jackson.annotation.JsonProperty
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Component
@@ -83,17 +84,112 @@ class EventsServiceClient(
             null
         }
     }
+
+
+
+    // Obtine detalii eveniment
+    fun getEveniment(evenimentId: Long): EvenimentInfo? {
+        return try {
+            webClient.get()
+                .uri("/api/event-manager/events/{id}", evenimentId)
+                .retrieve()
+                .bodyToMono(EvenimentInfo::class.java)
+                .block()
+        } catch (ex: Exception) {
+            null
+        }
+    }
+
+    // Obtine detalii pachet
+    fun getPachet(pachetId: Long): PachetInfo? {
+        return try {
+            webClient.get()
+                .uri("/api/event-manager/event-packets/{id}", pachetId)
+                .retrieve()
+                .bodyToMono(PachetInfo::class.java)
+                .block()
+        } catch (ex: Exception) {
+            null
+        }
+    }
+
+    // Obtine detalii complete bilet (cod, evenimentId, pachetId)
+    fun getBiletComplet(codBilet: String): BiletCompletInfo? {
+        return try {
+            webClient.get()
+                .uri("/api/event-manager/tickets/{cod}", codBilet)
+                .retrieve()
+                .bodyToMono(BiletCompletInfo::class.java)
+                .block()
+        } catch (ex: Exception) {
+            null
+        }
+    }
+
+    // Obtine evenimentele unui pachet
+    fun getEvenimentePachet(pachetId: Long): List<EvenimentInfo> {
+        return try {
+            val response = webClient.get()
+                .uri("/api/event-manager/event-packets/{id}/events", pachetId)
+                .retrieve()
+                .bodyToMono(EvenimenteResponse::class.java)
+                .block()
+
+            response?.embedded?.evenimente ?: emptyList()
+        } catch (ex: Exception) {
+            emptyList()
+        }
+    }
+
 }
 
-// DTO pentru request catre Events Service
+// DTO pentru request catre serviciu evenimente
 data class BiletRequest(
     val evenimentId: Long? = null,
     val pachetId: Long? = null
 )
 
-// DTO pentru response de la Events Service
+// DTO pentru response de la serviciu evenimente
 data class BiletResponse(
     val cod: String? = null,
     val evenimentId: Long? = null,
     val pachetId: Long? = null
+)
+
+// DTO pentru informatii eveniment
+data class EvenimentInfo(
+    val id: Long? = null,
+    val nume: String? = null,
+    val locatie: String? = null,
+    val descriere: String? = null,
+    val numarLocuri: Int? = null,
+    val bileteDisponibile: Int? = null
+)
+
+// DTO pentru informatii pachet
+data class PachetInfo(
+    val id: Long? = null,
+    val nume: String? = null,
+    val locatie: String? = null,
+    val descriere: String? = null,
+    val numarLocuri: Int? = null,
+    val bileteDisponibile: Int? = null
+)
+
+// DTO pentru bilet complet de la serviciu evenimente
+data class BiletCompletInfo(
+    val cod: String? = null,
+    val evenimentId: Long? = null,
+    val pachetId: Long? = null
+)
+
+// DTO pentru raspunsul cu evenimente (HATEOAS embedded)
+data class EvenimenteResponse(
+    @JsonProperty("_embedded")
+    val embedded: EmbeddedEvents? = null
+)
+
+data class EmbeddedEvents(
+    @JsonProperty("evenimentDTOes")
+    val evenimente: List<EvenimentInfo>? = null
 )

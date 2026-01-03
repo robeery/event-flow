@@ -2,16 +2,14 @@ package com.pos.serviciu_clienti.service
 
 
 
-import com.pos.serviciu_clienti.dto.ClientRequestDTO
-import com.pos.serviciu_clienti.dto.ClientResponseDTO
-import com.pos.serviciu_clienti.dto.ClientSummaryDTO
-import com.pos.serviciu_clienti.dto.CumparaBiletDTO
+import com.pos.serviciu_clienti.dto.*
 import com.pos.serviciu_clienti.model.Client
 import com.pos.serviciu_clienti.repository.ClientRepository
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+
 
 @Service
 @Transactional
@@ -128,6 +126,59 @@ class ClientService(
         client.bileteAchizitionate.remove(codBilet)
 
         return clientRepository.save(client)
+    }
+
+
+
+
+
+    // BILETE - Obtine lista de bilete in format lung
+    fun getBileteDetaliate(clientId: String): List<BiletDetaliatDTO> {
+        val client = getClientById(clientId)
+
+        return client.bileteAchizitionate.mapNotNull { codBilet ->
+            val biletInfo = eventsServiceClient.getBiletComplet(codBilet)
+
+            if (biletInfo != null) {
+                when {
+                    // Bilet pentru eveniment
+                    biletInfo.evenimentId != null -> {
+                        val eveniment = eventsServiceClient.getEveniment(biletInfo.evenimentId)
+                        BiletDetaliatDTO(
+                            cod = codBilet,
+                            tip = "eveniment",
+                            evenimentId = biletInfo.evenimentId,
+                            evenimentNume = eveniment?.nume,
+                            evenimentLocatie = eveniment?.locatie,
+                            evenimentDescriere = eveniment?.descriere,
+                            evenimentNumarLocuri = eveniment?.numarLocuri,
+                            evenimentBileteDisponibile = eveniment?.bileteDisponibile
+                        )
+                    }
+                    // Bilet pentru pachet
+                    biletInfo.pachetId != null -> {
+                        val pachet = eventsServiceClient.getPachet(biletInfo.pachetId)
+                        val evenimentePachet = eventsServiceClient.getEvenimentePachet(biletInfo.pachetId)
+                        BiletDetaliatDTO(
+                            cod = codBilet,
+                            tip = "pachet",
+                            pachetId = biletInfo.pachetId,
+                            pachetNume = pachet?.nume,
+                            pachetLocatie = pachet?.locatie,
+                            pachetDescriere = pachet?.descriere,
+                            pachetNumarLocuri = pachet?.numarLocuri,
+                            pachetBileteDisponibile = pachet?.bileteDisponibile,
+                            evenimenteIncluse = evenimentePachet.mapNotNull { it.nume }
+                        )
+                    }
+                    else -> {
+                        BiletDetaliatDTO(cod = codBilet, tip = "necunoscut")
+                    }
+                }
+            } else {
+                BiletDetaliatDTO(cod = codBilet, tip = "invalid")
+            }
+        }
     }
 
 
