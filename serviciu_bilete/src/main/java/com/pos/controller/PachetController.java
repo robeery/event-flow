@@ -11,6 +11,8 @@ import com.pos.service.PachetService;
 import com.pos.util.HateoasHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
@@ -122,7 +124,16 @@ public class PachetController {
             @ApiResponse(responseCode = "422", description = "Invalid JSON or incompatible data types")
     })
     @PostMapping
-    public ResponseEntity<PachetDTO> createPachet(@RequestBody PachetDTO pachetDTO) {
+    public ResponseEntity<PachetDTO> createPachet(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"idOwner\": 1, \"nume\": \"Pachet Festival Vara\", \"locatie\": \"Parc Central\", \"descriere\": \"Toate evenimentele de vara\", \"numarLocuri\": 500}"
+                            )
+                    )
+            )
+            @RequestBody PachetDTO pachetDTO) {
         PachetDTO createdPachet = pachetService.create(pachetDTO);
         hateoasHelper.addLinksToPachet(createdPachet);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdPachet);
@@ -161,6 +172,14 @@ public class PachetController {
     public ResponseEntity<PachetDTO> updatePachet(
             @Parameter(description = "Package ID", example = "1")
             @PathVariable Integer id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"idOwner\": 1, \"nume\": \"Pachet Actualizat\", \"locatie\": \"Locatie Noua\", \"descriere\": \"Descriere actualizata\", \"numarLocuri\": 400}"
+                            )
+                    )
+            )
             @RequestBody PachetDTO pachetDTO) {
 
         boolean exists = pachetService.existsById(id);
@@ -266,6 +285,13 @@ public class PachetController {
     public ResponseEntity<BiletDTO> createBiletForPachet(
             @Parameter(description = "Package ID", example = "1")
             @PathVariable Integer id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = false,
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = "{}")
+                    )
+            )
             @RequestBody(required = false) BiletDTO biletDTO) {
 
 
@@ -338,6 +364,14 @@ public class PachetController {
     public ResponseEntity<EvenimentDTO> createEvenimentInPachet(
             @Parameter(description = "Package ID", example = "1")
             @PathVariable Integer id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"idOwner\": 1, \"nume\": \"Eveniment Nou\", \"locatie\": \"Sala Concert\", \"descriere\": \"Un eveniment nou\", \"numarLocuri\": 200}"
+                            )
+                    )
+            )
             @RequestBody EvenimentDTO evenimentDTO) {
 
 

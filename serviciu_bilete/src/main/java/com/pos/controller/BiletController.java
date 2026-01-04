@@ -5,6 +5,8 @@ import com.pos.service.BiletService;
 import com.pos.util.HateoasHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
@@ -67,7 +69,16 @@ public class BiletController {
             @ApiResponse(responseCode = "422", description = "Invalid JSON or incompatible data types")
     })
     @PostMapping
-    public ResponseEntity<BiletDTO> createBilet(@RequestBody BiletDTO biletDTO) {
+    public ResponseEntity<BiletDTO> createBilet(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"evenimentId\": 1}"
+                            )
+                    )
+            )
+            @RequestBody BiletDTO biletDTO) {
         BiletDTO createdBilet = biletService.create(biletDTO);
         hateoasHelper.addLinksToBilet(createdBilet);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdBilet);
@@ -107,6 +118,14 @@ public class BiletController {
     public ResponseEntity<BiletDTO> createOrUpdateBilet(
             @Parameter(description = "Unique ticket code to create or update", example = "BILET-a1b2c3d4")
             @PathVariable String cod,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"pachetId\": 2}"
+                            )
+                    )
+            )
             @RequestBody BiletDTO biletDTO) {
 
 

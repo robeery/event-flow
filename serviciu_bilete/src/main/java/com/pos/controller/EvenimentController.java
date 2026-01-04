@@ -10,6 +10,8 @@ import com.pos.service.PachetEvenimentService;
 import com.pos.util.HateoasHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
@@ -136,7 +138,16 @@ public class EvenimentController {
             @ApiResponse(responseCode = "422", description = "Invalid JSON or incompatible data types")
     })
     @PostMapping
-    public ResponseEntity<EvenimentDTO> createEveniment(@RequestBody EvenimentDTO evenimentDTO) {
+    public ResponseEntity<EvenimentDTO> createEveniment(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"idOwner\": 1, \"nume\": \"Festival de Arta\", \"locatie\": \"Parc Vasile Alecsandri\", \"descriere\": \"Pentru toata lumea\", \"numarLocuri\": 300}"
+                            )
+                    )
+            )
+            @RequestBody EvenimentDTO evenimentDTO) {
         EvenimentDTO createdEveniment = evenimentService.create(evenimentDTO);
 
 
@@ -178,6 +189,14 @@ public class EvenimentController {
     public ResponseEntity<EvenimentDTO> updateEveniment(
             @Parameter(description = "Event ID", example = "1")
             @PathVariable Integer id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(
+                                    value = "{\"idOwner\": 1, \"nume\": \"Eveniment Actualizat\", \"locatie\": \"Sala Mare\", \"descriere\": \"Descriere noua\", \"numarLocuri\": 250}"
+                            )
+                    )
+            )
             @RequestBody EvenimentDTO evenimentDTO) {
 
         boolean exists = evenimentService.existsById(id);
@@ -286,6 +305,13 @@ public class EvenimentController {
     public ResponseEntity<BiletDTO> createBiletForEveniment(
             @Parameter(description = "Event ID", example = "1")
             @PathVariable Integer id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    required = false,
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = "{}")
+                    )
+            )
             @RequestBody(required = false) BiletDTO biletDTO) {
 
 
@@ -359,6 +385,12 @@ public class EvenimentController {
     public ResponseEntity<PachetEvenimentCreateDTO> addEvenimentToPachet(
             @Parameter(description = "Event ID", example = "1")
             @PathVariable Integer id,
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    content = @Content(
+                            mediaType = "application/json",
+                            examples = @ExampleObject(value = "{\"pachetId\": 2}")
+                    )
+            )
             @RequestBody PachetEvenimentCreateDTO dto) {
 
         // Validare: pachetId e obligatoriu
