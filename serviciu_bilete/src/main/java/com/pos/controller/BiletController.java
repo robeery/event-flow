@@ -5,6 +5,8 @@ import com.pos.service.BiletService;
 import com.pos.util.HateoasHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
@@ -25,6 +27,9 @@ public class BiletController {
 
     @Operation(summary = "Retrieve all tickets",
                description = "Returns a collection of all tickets in the system with HATEOAS links for navigation and ticket creation")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved all tickets")
+    })
     @GetMapping
     public ResponseEntity<CollectionModel<BiletDTO>> getAllBilete() {
         List<BiletDTO> bilete = biletService.findAll();
@@ -39,6 +44,10 @@ public class BiletController {
 
     @Operation(summary = "Retrieve ticket by code",
                description = "Returns a single ticket identified by its unique code with HATEOAS links")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved the ticket"),
+            @ApiResponse(responseCode = "404", description = "Ticket not found with the specified code")
+    })
     @GetMapping("/{cod}")
     public ResponseEntity<BiletDTO> getBiletByCod(
             @Parameter(description = "Unique ticket code identifier", example = "BILET-a1b2c3d4")
@@ -50,6 +59,13 @@ public class BiletController {
 
     @Operation(summary = "Create a new ticket",
                description = "Creates a new ticket with an auto-generated unique code. Returns the created ticket with HTTP 201 status")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Ticket successfully created"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "409", description = "Business logic conflict"),
+            @ApiResponse(responseCode = "415", description = "Unsupported media type - use application/json"),
+            @ApiResponse(responseCode = "422", description = "Invalid JSON or incompatible data types")
+    })
     @PostMapping
     public ResponseEntity<BiletDTO> createBilet(@RequestBody BiletDTO biletDTO) {
         BiletDTO createdBilet = biletService.create(biletDTO);
@@ -59,6 +75,10 @@ public class BiletController {
 
     @Operation(summary = "Delete a ticket",
                description = "Deletes a ticket identified by its unique code. Returns HTTP 204 No Content on success")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Ticket successfully deleted"),
+            @ApiResponse(responseCode = "404", description = "Ticket not found with the specified code")
+    })
     @DeleteMapping("/{cod}")
     public ResponseEntity<Void> deleteBilet(
             @Parameter(description = "Unique ticket code identifier", example = "BILET-a1b2c3d4")
@@ -75,6 +95,14 @@ public class BiletController {
 
     @Operation(summary = "Create or update ticket with explicit code",
                description = "Creates a new ticket with the specified code or updates an existing one. Returns HTTP 200 if updated, HTTP 201 if created")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Ticket successfully updated"),
+            @ApiResponse(responseCode = "201", description = "Ticket successfully created"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "409", description = "Business logic conflict"),
+            @ApiResponse(responseCode = "415", description = "Unsupported media type - use application/json"),
+            @ApiResponse(responseCode = "422", description = "Invalid JSON or incompatible data types")
+    })
     @PutMapping("/{cod}")
     public ResponseEntity<BiletDTO> createOrUpdateBilet(
             @Parameter(description = "Unique ticket code to create or update", example = "BILET-a1b2c3d4")

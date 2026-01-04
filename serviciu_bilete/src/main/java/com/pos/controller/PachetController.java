@@ -11,6 +11,8 @@ import com.pos.service.PachetService;
 import com.pos.util.HateoasHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.Link;
@@ -41,6 +43,9 @@ public class PachetController {
     //
     @Operation(summary = "Retrieve all event packages",
                description = "Returns a collection of all event packages with optional pagination and filtering. Supports query parameters: ?page=..., ?items_per_page=..., ?available_tickets=..., ?type=...")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved all event packages")
+    })
     @GetMapping
     public ResponseEntity<CollectionModel<PachetDTO>> getAllPachete(
             @Parameter(description = "Page number for pagination", example = "1")
@@ -91,6 +96,10 @@ public class PachetController {
 
     @Operation(summary = "Retrieve event package by ID",
                description = "Returns a single event package identified by its unique ID with HATEOAS links")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved the event package"),
+            @ApiResponse(responseCode = "404", description = "Event package not found with the specified ID")
+    })
     @GetMapping("/{id}")
     public ResponseEntity<PachetDTO> getPachetById(
             @Parameter(description = "Package ID", example = "1")
@@ -105,6 +114,13 @@ public class PachetController {
 
     @Operation(summary = "Create a new event package",
                description = "Creates a new event package with the provided details. Returns the created package with HTTP 201 status")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Event package successfully created"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "409", description = "Business logic conflict"),
+            @ApiResponse(responseCode = "415", description = "Unsupported media type - use application/json"),
+            @ApiResponse(responseCode = "422", description = "Invalid JSON or incompatible data types")
+    })
     @PostMapping
     public ResponseEntity<PachetDTO> createPachet(@RequestBody PachetDTO pachetDTO) {
         PachetDTO createdPachet = pachetService.create(pachetDTO);
@@ -116,6 +132,10 @@ public class PachetController {
     //  DELETE /api/event-manager/event-packets/{id}
     @Operation(summary = "Delete an event package",
                description = "Deletes the event package identified by {id} from the URL")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Event package successfully deleted"),
+            @ApiResponse(responseCode = "404", description = "Event package not found with the specified ID")
+    })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePachet(
             @Parameter(description = "Package ID", example = "1")
@@ -129,6 +149,14 @@ public class PachetController {
 
     @Operation(summary = "Update or create event package with explicit ID",
                description = "Updates an existing event package or creates a new one with the specified ID. Returns HTTP 200 if updated, HTTP 201 if created")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Event package successfully updated"),
+            @ApiResponse(responseCode = "201", description = "Event package successfully created"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "409", description = "Business logic conflict"),
+            @ApiResponse(responseCode = "415", description = "Unsupported media type - use application/json"),
+            @ApiResponse(responseCode = "422", description = "Invalid JSON or incompatible data types")
+    })
     @PutMapping("/{id}")
     public ResponseEntity<PachetDTO> updatePachet(
             @Parameter(description = "Package ID", example = "1")
@@ -150,6 +178,10 @@ public class PachetController {
      */
     @Operation(summary = "Retrieve all tickets for an event package",
                description = "Returns a collection of all tickets associated with the specified event package ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved all tickets for the event package"),
+            @ApiResponse(responseCode = "404", description = "Event package not found with the specified ID")
+    })
     @GetMapping("/{id}/tickets")
     public ResponseEntity<CollectionModel<BiletDTO>> getBileteForPachet(
             @Parameter(description = "Package ID", example = "1")
@@ -189,6 +221,10 @@ public class PachetController {
      */
     @Operation(summary = "Retrieve specific ticket for an event package",
                description = "Returns a single ticket identified by its code that belongs to the specified event package ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved the ticket for the event package"),
+            @ApiResponse(responseCode = "404", description = "Event package not found or ticket not found or ticket does not belong to this package")
+    })
     @GetMapping("/{id}/tickets/{ticketCod}")
     public ResponseEntity<BiletDTO> getBiletForPachet(
             @Parameter(description = "Package ID", example = "1")
@@ -218,6 +254,14 @@ public class PachetController {
      */
     @Operation(summary = "Create a ticket for an event package",
                description = "Creates a new ticket associated with the specified event package ID. Request body is optional and can be empty. Returns HTTP 201 status")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Ticket successfully created for the event package"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "404", description = "Event package not found with the specified ID"),
+            @ApiResponse(responseCode = "409", description = "Business logic conflict"),
+            @ApiResponse(responseCode = "415", description = "Unsupported media type - use application/json"),
+            @ApiResponse(responseCode = "422", description = "Invalid JSON or incompatible data types")
+    })
     @PostMapping("/{id}/tickets")
     public ResponseEntity<BiletDTO> createBiletForPachet(
             @Parameter(description = "Package ID", example = "1")
@@ -245,6 +289,9 @@ public class PachetController {
      */
     @Operation(summary = "Retrieve all events in an event package",
                description = "Returns a collection of all events included in the specified event package ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Successfully retrieved all events in the event package")
+    })
     @GetMapping("/{id}/events")
     public ResponseEntity<CollectionModel<EvenimentDTO>> getEvenimenteForPachet(
             @Parameter(description = "Package ID", example = "1")
@@ -279,6 +326,14 @@ public class PachetController {
      */
     @Operation(summary = "Create a new event and add to package",
                description = "Creates a new event with the provided details and automatically associates it with the specified event package ID. Returns HTTP 201 status")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "201", description = "Event successfully created and added to the package"),
+            @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "404", description = "Event package not found with the specified ID"),
+            @ApiResponse(responseCode = "409", description = "Business logic conflict"),
+            @ApiResponse(responseCode = "415", description = "Unsupported media type - use application/json"),
+            @ApiResponse(responseCode = "422", description = "Invalid JSON or incompatible data types")
+    })
     @PostMapping("/{id}/events")
     public ResponseEntity<EvenimentDTO> createEvenimentInPachet(
             @Parameter(description = "Package ID", example = "1")
@@ -318,7 +373,9 @@ public class PachetController {
 
     @Operation(summary = "Remove association between event and package",
                description = "Removes the event with {evenimentId} from the URL from the package with {id} from the URL")
-
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "204", description = "Association successfully removed")
+    })
     @DeleteMapping("/{id}/events/{evenimentId}")
     public ResponseEntity<Void> removeEvenimentFromPachet(
             @Parameter(description = "Package ID", example = "1")
