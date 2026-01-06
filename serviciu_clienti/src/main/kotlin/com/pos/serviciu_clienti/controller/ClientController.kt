@@ -6,6 +6,9 @@ import com.pos.serviciu_clienti.dto.*
 import com.pos.serviciu_clienti.service.ClientService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
+import io.swagger.v3.oas.annotations.media.Content
+import io.swagger.v3.oas.annotations.media.ExampleObject
+import io.swagger.v3.oas.annotations.media.Schema
 import jakarta.validation.Valid
 import org.springframework.data.domain.PageRequest
 import org.springframework.hateoas.Link
@@ -32,7 +35,32 @@ class ClientController(
         ApiResponse(responseCode = "409", description = "Email already exists")
     ])
     @PostMapping
-    fun createClient(@Valid @RequestBody dto: ClientRequestDTO): ResponseEntity<ClientResponseDTO> {
+    fun createClient(
+        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Client data",
+            required = true,
+            content = [Content(
+                mediaType = "application/json",
+                schema = Schema(implementation = ClientRequestDTO::class),
+                examples = [ExampleObject(
+                    name = "Create client example",
+                    value = """
+                    {
+                        "email": "maria.popescu@gmail.com",
+                        "prenume": "Maria",
+                        "nume": "Popescu",
+                        "dateSuntPublice": true,
+                        "linkuriSocialMedia": {
+                            "facebook": "https://facebook.com/maria.popescu",
+                            "linkedin": "https://linkedin.com/in/maria-popescu"
+                        }
+                    }
+                    """
+                )]
+            )]
+        )
+        @Valid @RequestBody dto: ClientRequestDTO
+    ): ResponseEntity<ClientResponseDTO> {
         val client = clientService.createClient(dto)
         val response = toResponseDTO(client)
         return ResponseEntity.status(HttpStatus.CREATED).body(response)
@@ -105,6 +133,29 @@ class ClientController(
     fun updateClient(
         @Parameter(description = "Client ID")
         @PathVariable id: String,
+        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Updated client data",
+            required = true,
+            content = [Content(
+                mediaType = "application/json",
+                schema = Schema(implementation = ClientRequestDTO::class),
+                examples = [ExampleObject(
+                    name = "Update client example",
+                    value = """
+                    {
+                        "email": "andrei.stan.updated@gmail.com",
+                        "prenume": "Andrei",
+                        "nume": "Stan",
+                        "dateSuntPublice": true,
+                        "linkuriSocialMedia": {
+                            "github": "https://github.com/andrei-stan",
+                            "linkedin": "https://linkedin.com/in/andrei-stan"
+                        }
+                    }
+                    """
+                )]
+            )]
+        )
         @Valid @RequestBody dto: ClientRequestDTO
     ): ResponseEntity<ClientResponseDTO> {
         val client = clientService.updateClient(id, dto)
@@ -139,6 +190,24 @@ class ClientController(
     fun cumparaBilet(
         @Parameter(description = "Client ID")
         @PathVariable id: String,
+        @io.swagger.v3.oas.annotations.parameters.RequestBody(
+            description = "Ticket purchase data - provide either evenimentId OR pachetId",
+            required = true,
+            content = [Content(
+                mediaType = "application/json",
+                schema = Schema(implementation = CumparaBiletDTO::class),
+                examples = [
+                    ExampleObject(
+                        name = "Buy ticket for event",
+                        value = """{"evenimentId": 5}"""
+                    ),
+                    ExampleObject(
+                        name = "Buy ticket for package",
+                        value = """{"pachetId": 3}"""
+                    )
+                ]
+            )]
+        )
         @RequestBody dto: CumparaBiletDTO
     ): ResponseEntity<ClientResponseDTO> {
         val client = clientService.cumparaBilet(id, dto)
