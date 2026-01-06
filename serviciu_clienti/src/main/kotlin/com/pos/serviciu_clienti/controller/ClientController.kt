@@ -113,6 +113,7 @@ class ClientController(
         val allClientsLink = linkTo(methodOn(ClientController::class.java).getClients(null, 0, 10)).withRel("all-clients")
 
         return ClientResponseDTO(
+
             id = client.id!!,
             email = client.email,
             prenume = client.prenume,
