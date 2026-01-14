@@ -13,6 +13,9 @@ data class Client(
     val id: String? = null,  // MongoDB imi genereaza automat ObjectId
 
     @Indexed(unique = true)
+    val idmUserId: Int,  // Link to IDM user (from authentication)
+
+    @Indexed(unique = true)
     val email: String,
 
     val prenume: String? = null,

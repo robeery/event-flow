@@ -18,14 +18,20 @@ class ClientService(
     private val eventsServiceClient: EventsServiceClient
 ) {
 
-    // CREATE - Creeaza client nou
-    fun createClient(dto: ClientRequestDTO): Client {
+    // CREATE - Creeaza client nou (asociat cu IDM user)
+    fun createClient(dto: ClientRequestDTO, idmUserId: Int): Client {
         // verific mail
         if (clientRepository.existsByEmail(dto.email)) {
             throw IllegalArgumentException("Email-ul '${dto.email}' este deja folosit")
         }
 
+        // verific daca exista deja un profil pentru acest IDM user
+        if (clientRepository.existsByIdmUserId(idmUserId)) {
+            throw IllegalArgumentException("Exista deja un profil de client pentru acest utilizator")
+        }
+
         val client = Client(
+            idmUserId = idmUserId,
             email = dto.email,
             prenume = dto.prenume,
             nume = dto.nume,
@@ -65,6 +71,7 @@ class ClientService(
 
         val clientActualizat = Client(
             id = id,
+            idmUserId = clientExistent.idmUserId,  // pastreaza IDM user ID
             email = dto.email,
             prenume = dto.prenume,
             nume = dto.nume,

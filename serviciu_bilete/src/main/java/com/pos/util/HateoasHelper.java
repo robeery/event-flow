@@ -38,13 +38,13 @@ public class HateoasHelper {
 
         // Link update - actualizeaza evenimentul
         eveniment.add(linkTo(methodOn(EvenimentController.class)
-                .updateEveniment(eveniment.getId(), null))
+                .updateEveniment(eveniment.getId(), null, null))
                 .withRel("update")
                 .withType("PUT"));
 
         // Link delete - sterge evenimentul
         eveniment.add(linkTo(methodOn(EvenimentController.class)
-                .deleteEveniment(eveniment.getId()))
+                .deleteEveniment(eveniment.getId(), null))
                 .withRel("delete")
                 .withType("DELETE"));
 
@@ -79,12 +79,12 @@ public class HateoasHelper {
                 .withType("GET"));
 
         pachet.add(linkTo(methodOn(PachetController.class)
-                .updatePachet(pachet.getId(), null))
+                .updatePachet(pachet.getId(), null, null))
                 .withRel("update")
                 .withType("PUT"));
 
         pachet.add(linkTo(methodOn(PachetController.class)
-                .deletePachet(pachet.getId()))
+                .deletePachet(pachet.getId(), null))
                 .withRel("delete")
                 .withType("DELETE"));
 
@@ -116,7 +116,7 @@ public class HateoasHelper {
                 .withType("GET"));
 
         bilet.add(linkTo(methodOn(BiletController.class)
-                .deleteBilet(bilet.getCod()))
+                .deleteBilet(bilet.getCod(), null))
                 .withRel("delete")
                 .withType("DELETE"));
 
@@ -137,7 +137,7 @@ public class HateoasHelper {
 
 
         bilet.add(linkTo(methodOn(BiletController.class)
-                .createOrUpdateBilet(bilet.getCod(), null))
+                .createOrUpdateBilet(bilet.getCod(), null, null))
                 .withRel("update")
                 .withType("PUT"));
 
@@ -177,7 +177,7 @@ public class HateoasHelper {
 
         // Link delete
         asociere.add(linkTo(methodOn(EvenimentController.class)
-                .removeEvenimentFromPachet(asociere.getEvenimentId(), asociere.getPachetId()))
+                .removeEvenimentFromPachet(asociere.getEvenimentId(), asociere.getPachetId(), null))
                 .withRel("delete")
                 .withType("DELETE"));
     }

@@ -1,7 +1,12 @@
 package com.pos.controller;
 
 import com.pos.dto.BiletDTO;
+import com.pos.dto.EvenimentDTO;
+import com.pos.dto.PachetDTO;
+import com.pos.security.AuthorizationHelper;
 import com.pos.service.BiletService;
+import com.pos.service.EvenimentService;
+import com.pos.service.PachetService;
 import com.pos.util.HateoasHelper;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -9,6 +14,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.http.HttpStatus;
@@ -26,6 +33,9 @@ public class BiletController {
 
     private final BiletService biletService;
     private final HateoasHelper hateoasHelper;
+    private final AuthorizationHelper authHelper;
+    private final EvenimentService evenimentService;
+    private final PachetService pachetService;
 
     @Operation(summary = "Retrieve all tickets",
                description = "Returns a collection of all tickets in the system with HATEOAS links for navigation and ticket creation")
@@ -39,7 +49,7 @@ public class BiletController {
 
         CollectionModel<BiletDTO> collectionModel = CollectionModel.of(bilete);
         collectionModel.add(linkTo(methodOn(BiletController.class).getAllBilete()).withSelfRel().withType("GET"));
-        collectionModel.add(linkTo(methodOn(BiletController.class).createBilet(null)).withRel("create").withType("POST"));
+        collectionModel.add(linkTo(methodOn(BiletController.class).createBilet(null, null)).withRel("create").withType("POST"));
 
         return ResponseEntity.ok(collectionModel);
     }
@@ -60,10 +70,13 @@ public class BiletController {
     }
 
     @Operation(summary = "Create a new ticket",
-               description = "Creates a new ticket with an auto-generated unique code. Returns the created ticket with HTTP 201 status")
+               description = "Creates a new ticket with an auto-generated unique code. Returns the created ticket with HTTP 201 status. Requires authentication.")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Ticket successfully created"),
             @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "401", description = "Missing or invalid authentication token"),
+            @ApiResponse(responseCode = "403", description = "Access denied - insufficient permissions"),
             @ApiResponse(responseCode = "409", description = "Business logic conflict"),
             @ApiResponse(responseCode = "415", description = "Unsupported media type - use application/json"),
             @ApiResponse(responseCode = "422", description = "Invalid JSON or incompatible data types")
@@ -78,22 +91,47 @@ public class BiletController {
                             )
                     )
             )
-            @RequestBody BiletDTO biletDTO) {
+            @RequestBody BiletDTO biletDTO,
+            HttpServletRequest request) {
+        // Authorization: check ownership of the event or package
+        Integer ownerId = getOwnerIdForTicket(biletDTO);
+        authHelper.requireOwnership(request, ownerId);
+
         BiletDTO createdBilet = biletService.create(biletDTO);
         hateoasHelper.addLinksToBilet(createdBilet);
         return ResponseEntity.status(HttpStatus.CREATED).body(createdBilet);
     }
 
+    private Integer getOwnerIdForTicket(BiletDTO biletDTO) {
+        if (biletDTO.getEvenimentId() != null) {
+            EvenimentDTO ev = evenimentService.findById(biletDTO.getEvenimentId());
+            return ev.getIdOwner();
+        } else if (biletDTO.getPachetId() != null) {
+            PachetDTO pachet = pachetService.findById(biletDTO.getPachetId());
+            return pachet.getIdOwner();
+        }
+        return null;
+    }
+
     @Operation(summary = "Delete a ticket",
-               description = "Deletes a ticket identified by its unique code. Returns HTTP 204 No Content on success")
+               description = "Deletes a ticket identified by its unique code. Returns HTTP 204 No Content on success. Requires authentication.")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Ticket successfully deleted"),
+            @ApiResponse(responseCode = "401", description = "Missing or invalid authentication token"),
+            @ApiResponse(responseCode = "403", description = "Access denied - insufficient permissions"),
             @ApiResponse(responseCode = "404", description = "Ticket not found with the specified code")
     })
     @DeleteMapping("/{cod}")
     public ResponseEntity<Void> deleteBilet(
             @Parameter(description = "Unique ticket code identifier", example = "BILET-a1b2c3d4")
-            @PathVariable String cod) {
+            @PathVariable String cod,
+            HttpServletRequest request) {
+        // Authorization: check ownership of the event or package associated with ticket
+        BiletDTO bilet = biletService.findByCod(cod);
+        Integer ownerId = getOwnerIdForTicket(bilet);
+        authHelper.requireOwnership(request, ownerId);
+
         biletService.delete(cod);
         return ResponseEntity.noContent().build();
     }
@@ -105,11 +143,14 @@ public class BiletController {
      //nu exista -> create (201)
 
     @Operation(summary = "Create or update ticket with explicit code",
-               description = "Creates a new ticket with the specified code or updates an existing one. Returns HTTP 200 if updated, HTTP 201 if created")
+               description = "Creates a new ticket with the specified code or updates an existing one. Returns HTTP 200 if updated, HTTP 201 if created. Requires authentication.")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Ticket successfully updated"),
             @ApiResponse(responseCode = "201", description = "Ticket successfully created"),
             @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "401", description = "Missing or invalid authentication token"),
+            @ApiResponse(responseCode = "403", description = "Access denied - insufficient permissions"),
             @ApiResponse(responseCode = "409", description = "Business logic conflict"),
             @ApiResponse(responseCode = "415", description = "Unsupported media type - use application/json"),
             @ApiResponse(responseCode = "422", description = "Invalid JSON or incompatible data types")
@@ -126,10 +167,22 @@ public class BiletController {
                             )
                     )
             )
-            @RequestBody BiletDTO biletDTO) {
+            @RequestBody BiletDTO biletDTO,
+            HttpServletRequest request) {
 
 
         boolean exists = biletService.existsByCod(cod);
+
+        if (exists) {
+            // Authorization: check ownership of existing ticket
+            BiletDTO existing = biletService.findByCod(cod);
+            Integer ownerId = getOwnerIdForTicket(existing);
+            authHelper.requireOwnership(request, ownerId);
+        } else {
+            // Authorization: check ownership for new ticket
+            Integer ownerId = getOwnerIdForTicket(biletDTO);
+            authHelper.requireOwnership(request, ownerId);
+        }
 
 
         BiletDTO savedBilet = biletService.createOrUpdate(cod, biletDTO);
@@ -143,6 +196,4 @@ public class BiletController {
         return ResponseEntity.status(status).body(savedBilet);
     }
 
-    //ma mai gandesc daca vreau sau nu
-    //PUT - TO DO
 }

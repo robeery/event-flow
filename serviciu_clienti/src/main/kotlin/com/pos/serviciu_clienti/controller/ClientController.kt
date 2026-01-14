@@ -3,12 +3,14 @@ package com.pos.serviciu_clienti.controller
 
 
 import com.pos.serviciu_clienti.dto.*
+import com.pos.serviciu_clienti.security.AuthorizationHelper
 import com.pos.serviciu_clienti.service.ClientService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.ExampleObject
 import io.swagger.v3.oas.annotations.media.Schema
+import jakarta.servlet.http.HttpServletRequest
 import jakarta.validation.Valid
 import org.springframework.data.domain.PageRequest
 import org.springframework.hateoas.Link
@@ -18,20 +20,25 @@ import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
 import io.swagger.v3.oas.annotations.responses.ApiResponse
 import io.swagger.v3.oas.annotations.responses.ApiResponses
+import io.swagger.v3.oas.annotations.security.SecurityRequirement
 import io.swagger.v3.oas.annotations.tags.Tag
 
 @RestController
 @RequestMapping("/api/clients")
 @Tag(name = "Clients", description = "API for client management")
 class ClientController(
-    private val clientService: ClientService
+    private val clientService: ClientService,
+    private val authHelper: AuthorizationHelper
 ) {
 
     // CREATE - POST /api/clients
-    @Operation(summary = "Create new client", description = "Creates a new client with unique email")
+    @Operation(summary = "Create new client", description = "Creates a new client with unique email. Requires authentication.")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(value = [
         ApiResponse(responseCode = "201", description = "Client created successfully"),
         ApiResponse(responseCode = "400", description = "Invalid data"),
+        ApiResponse(responseCode = "401", description = "Missing or invalid authentication token"),
+        ApiResponse(responseCode = "403", description = "Access denied - insufficient permissions"),
         ApiResponse(responseCode = "409", description = "Email already exists")
     ])
     @PostMapping
@@ -59,9 +66,14 @@ class ClientController(
                 )]
             )]
         )
-        @Valid @RequestBody dto: ClientRequestDTO
+        @Valid @RequestBody dto: ClientRequestDTO,
+        request: HttpServletRequest
     ): ResponseEntity<ClientResponseDTO> {
-        val client = clientService.createClient(dto)
+        // Authorization: only admin or client can create (clients create their own profile)
+        authHelper.requireAdminOrClient(request)
+        val idmUserId = authHelper.getUserIdForNewClient(request)
+
+        val client = clientService.createClient(dto, idmUserId)
         val response = toResponseDTO(client)
         return ResponseEntity.status(HttpStatus.CREATED).body(response)
     }
@@ -123,9 +135,12 @@ class ClientController(
     }
 
     // UPDATE - PUT /api/clients/{id}
-    @Operation(summary = "Update client", description = "Updates an existing client's data")
+    @Operation(summary = "Update client", description = "Updates an existing client's data. Requires authentication.")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(value = [
         ApiResponse(responseCode = "200", description = "Client updated"),
+        ApiResponse(responseCode = "401", description = "Missing or invalid authentication token"),
+        ApiResponse(responseCode = "403", description = "Access denied - insufficient permissions"),
         ApiResponse(responseCode = "404", description = "Client not found"),
         ApiResponse(responseCode = "409", description = "New email already exists")
     ])
@@ -156,33 +171,49 @@ class ClientController(
                 )]
             )]
         )
-        @Valid @RequestBody dto: ClientRequestDTO
+        @Valid @RequestBody dto: ClientRequestDTO,
+        request: HttpServletRequest
     ): ResponseEntity<ClientResponseDTO> {
+        // Authorization: check ownership
+        val existingClient = clientService.getClientById(id)
+        authHelper.requireClientOwnership(request, existingClient.idmUserId)
+
         val client = clientService.updateClient(id, dto)
         val response = toResponseDTO(client)
         return ResponseEntity.ok(response)
     }
 
     // DELETE - DELETE /api/clients/{id}
-    @Operation(summary = "Delete client", description = "Deletes a client (only if they have no tickets)")
+    @Operation(summary = "Delete client", description = "Deletes a client (only if they have no tickets). Requires authentication.")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(value = [
         ApiResponse(responseCode = "204", description = "Client deleted"),
+        ApiResponse(responseCode = "401", description = "Missing or invalid authentication token"),
+        ApiResponse(responseCode = "403", description = "Access denied - insufficient permissions"),
         ApiResponse(responseCode = "404", description = "Client not found"),
         ApiResponse(responseCode = "422", description = "Client has purchased tickets")
     ])
     @DeleteMapping("/{id}")
     fun deleteClient(
         @Parameter(description = "Client ID")
-        @PathVariable id: String
+        @PathVariable id: String,
+        request: HttpServletRequest
     ): ResponseEntity<Void> {
+        // Authorization: check ownership
+        val existingClient = clientService.getClientById(id)
+        authHelper.requireClientOwnership(request, existingClient.idmUserId)
+
         clientService.deleteClient(id)
         return ResponseEntity.noContent().build()
     }
 
     // BILETE - POST /api/clients/{id}/bilete (cumpara bilet)
-    @Operation(summary = "Purchase ticket", description = "Purchases a ticket for an event or package")
+    @Operation(summary = "Purchase ticket", description = "Purchases a ticket for an event or package. Requires authentication.")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(value = [
         ApiResponse(responseCode = "201", description = "Ticket purchased successfully"),
+        ApiResponse(responseCode = "401", description = "Missing or invalid authentication token"),
+        ApiResponse(responseCode = "403", description = "Access denied - insufficient permissions"),
         ApiResponse(responseCode = "404", description = "Client or event/package not found"),
         ApiResponse(responseCode = "409", description = "Invalid data (must provide eventId OR packageId)")
     ])
@@ -208,17 +239,25 @@ class ClientController(
                 ]
             )]
         )
-        @RequestBody dto: CumparaBiletDTO
+        @RequestBody dto: CumparaBiletDTO,
+        request: HttpServletRequest
     ): ResponseEntity<ClientResponseDTO> {
+        // Authorization: check ownership (clients buy tickets for themselves)
+        val existingClient = clientService.getClientById(id)
+        authHelper.requireClientOwnership(request, existingClient.idmUserId)
+
         val client = clientService.cumparaBilet(id, dto)
         val response = toResponseDTO(client)
         return ResponseEntity.status(HttpStatus.CREATED).body(response)
     }
 
     // BILETE - DELETE /api/clients/{id}/bilete/{codBilet} (sterge/returneaz bilet)
-    @Operation(summary = "Return ticket", description = "Removes a ticket from client and deletes it from Events Service")
+    @Operation(summary = "Return ticket", description = "Removes a ticket from client and deletes it from Events Service. Requires authentication.")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(value = [
         ApiResponse(responseCode = "200", description = "Ticket returned"),
+        ApiResponse(responseCode = "401", description = "Missing or invalid authentication token"),
+        ApiResponse(responseCode = "403", description = "Access denied - insufficient permissions"),
         ApiResponse(responseCode = "404", description = "Client or ticket not found")
     ])
     @DeleteMapping("/{id}/bilete/{codBilet}")
@@ -226,8 +265,13 @@ class ClientController(
         @Parameter(description = "Client ID")
         @PathVariable id: String,
         @Parameter(description = "Ticket code")
-        @PathVariable codBilet: String
+        @PathVariable codBilet: String,
+        request: HttpServletRequest
     ): ResponseEntity<ClientResponseDTO> {
+        // Authorization: check ownership
+        val existingClient = clientService.getClientById(id)
+        authHelper.requireClientOwnership(request, existingClient.idmUserId)
+
         val client = clientService.returneazaBilet(id, codBilet)
         val response = toResponseDTO(client)
         return ResponseEntity.ok(response)
@@ -239,8 +283,8 @@ class ClientController(
         val allClientsLink = linkTo(methodOn(ClientController::class.java).getClients(null, 0, 10)).withRel("all-clients")
 
         return ClientResponseDTO(
-
             id = client.id!!,
+            idmUserId = client.idmUserId,
             email = client.email,
             prenume = client.prenume,
             nume = client.nume,
@@ -260,6 +304,7 @@ class ClientController(
 
         return ClientSummaryDTO(
             id = client.id!!,
+            idmUserId = client.idmUserId,
             email = client.email,
             prenume = client.prenume,
             nume = client.nume,

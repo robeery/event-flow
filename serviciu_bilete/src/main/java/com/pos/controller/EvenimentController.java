@@ -3,6 +3,7 @@ package com.pos.controller;
 import com.pos.dto.BiletDTO;
 import com.pos.dto.PachetDTO;
 import com.pos.exception.ResourceNotFoundException;
+import com.pos.security.AuthorizationHelper;
 import com.pos.service.BiletService;
 import com.pos.dto.EvenimentDTO;
 import com.pos.service.EvenimentService;
@@ -14,6 +15,8 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.Link;
@@ -40,6 +43,7 @@ public class EvenimentController {
     private final HateoasHelper hateoasHelper;
     private final BiletService biletService;
     private final PachetEvenimentService pachetEvenimentService;
+    private final AuthorizationHelper authHelper;
 
 
 
@@ -98,7 +102,7 @@ public class EvenimentController {
 
         // Link create pentru a crea un eveniment nou
         collectionModel.add(linkTo(methodOn(EvenimentController.class)
-                .createEveniment(null))
+                .createEveniment(null, null))
                 .withRel("create")
                 .withType("POST"));
 
@@ -129,10 +133,13 @@ public class EvenimentController {
      //creaza un eveniment nou
 
     @Operation(summary = "Create a new event",
-               description = "Creates a new event with the provided details. Returns the created event with HTTP 201 status")
+               description = "Creates a new event with the provided details. Returns the created event with HTTP 201 status. Requires authentication.")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Event successfully created"),
             @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "401", description = "Missing or invalid authentication token"),
+            @ApiResponse(responseCode = "403", description = "Access denied - insufficient permissions"),
             @ApiResponse(responseCode = "409", description = "Business logic conflict"),
             @ApiResponse(responseCode = "415", description = "Unsupported media type - use application/json"),
             @ApiResponse(responseCode = "422", description = "Invalid JSON or incompatible data types")
@@ -147,7 +154,13 @@ public class EvenimentController {
                             )
                     )
             )
-            @RequestBody EvenimentDTO evenimentDTO) {
+            @RequestBody EvenimentDTO evenimentDTO,
+            HttpServletRequest request) {
+        // Authorization: only admin or owner-event can create
+        authHelper.requireOwnershipForCreate(request, evenimentDTO.getIdOwner());
+        // Set effective owner ID (for owner-event, it's always their own ID)
+        evenimentDTO.setIdOwner(authHelper.getEffectiveOwnerId(request, evenimentDTO.getIdOwner()));
+
         EvenimentDTO createdEveniment = evenimentService.create(evenimentDTO);
 
 
@@ -159,15 +172,23 @@ public class EvenimentController {
     //DELETE /api/event-manager/events/{id}
     //sterge un eveniment
     @Operation(summary = "Delete an event",
-               description = "Deletes an event identified by its ID. Returns HTTP 204 No Content on success")
+               description = "Deletes an event identified by its ID. Returns HTTP 204 No Content on success. Requires authentication.")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "204", description = "Event successfully deleted"),
+            @ApiResponse(responseCode = "401", description = "Missing or invalid authentication token"),
+            @ApiResponse(responseCode = "403", description = "Access denied - insufficient permissions"),
             @ApiResponse(responseCode = "404", description = "Event not found with the specified ID")
     })
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteEveniment(
             @Parameter(description = "Event ID", example = "1")
-            @PathVariable Integer id) {
+            @PathVariable Integer id,
+            HttpServletRequest request) {
+        // Authorization: check ownership before deleting
+        EvenimentDTO existing = evenimentService.findById(id);
+        authHelper.requireOwnership(request, existing.getIdOwner());
+
         evenimentService.delete(id);
         return ResponseEntity.noContent().build();
     }
@@ -176,11 +197,14 @@ public class EvenimentController {
     //PUT /api/event-manager/events/{id}
 
     @Operation(summary = "Update or create event with explicit ID",
-               description = "Updates an existing event or creates a new one with the specified ID. Returns HTTP 200 if updated, HTTP 201 if created")
+               description = "Updates an existing event or creates a new one with the specified ID. Returns HTTP 200 if updated, HTTP 201 if created. Requires authentication.")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "Event successfully updated"),
             @ApiResponse(responseCode = "201", description = "Event successfully created"),
             @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "401", description = "Missing or invalid authentication token"),
+            @ApiResponse(responseCode = "403", description = "Access denied - insufficient permissions"),
             @ApiResponse(responseCode = "409", description = "Business logic conflict"),
             @ApiResponse(responseCode = "415", description = "Unsupported media type - use application/json"),
             @ApiResponse(responseCode = "422", description = "Invalid JSON or incompatible data types")
@@ -197,9 +221,21 @@ public class EvenimentController {
                             )
                     )
             )
-            @RequestBody EvenimentDTO evenimentDTO) {
+            @RequestBody EvenimentDTO evenimentDTO,
+            HttpServletRequest request) {
 
         boolean exists = evenimentService.existsById(id);
+
+        if (exists) {
+            // Authorization: check ownership for update
+            EvenimentDTO existing = evenimentService.findById(id);
+            authHelper.requireOwnership(request, existing.getIdOwner());
+        } else {
+            // Authorization: check create permission for new resource
+            authHelper.requireOwnershipForCreate(request, evenimentDTO.getIdOwner());
+            evenimentDTO.setIdOwner(authHelper.getEffectiveOwnerId(request, evenimentDTO.getIdOwner()));
+        }
+
         EvenimentDTO updatedEveniment = evenimentService.update(id, evenimentDTO);
 
 
@@ -247,7 +283,7 @@ public class EvenimentController {
 
         //link post
         collectionModel.add(linkTo(methodOn(EvenimentController.class)
-                .createBiletForEveniment(id, null))
+                .createBiletForEveniment(id, null, null))
                 .withRel("create")
                 .withType("POST"));
 
@@ -292,10 +328,13 @@ public class EvenimentController {
      * body poate fi gol {} sau cu altele pe viitor, vad
      */
     @Operation(summary = "Create a ticket for an event",
-               description = "Creates a new ticket associated with the specified event ID. Request body is optional and can be empty. Returns HTTP 201 status")
+               description = "Creates a new ticket associated with the specified event ID. Request body is optional and can be empty. Returns HTTP 201 status. Requires authentication.")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Ticket successfully created for the event"),
             @ApiResponse(responseCode = "400", description = "Invalid request data"),
+            @ApiResponse(responseCode = "401", description = "Missing or invalid authentication token"),
+            @ApiResponse(responseCode = "403", description = "Access denied - insufficient permissions"),
             @ApiResponse(responseCode = "404", description = "Event not found with the specified ID"),
             @ApiResponse(responseCode = "409", description = "Business logic conflict"),
             @ApiResponse(responseCode = "415", description = "Unsupported media type - use application/json"),
@@ -312,10 +351,12 @@ public class EvenimentController {
                             examples = @ExampleObject(value = "{}")
                     )
             )
-            @RequestBody(required = false) BiletDTO biletDTO) {
+            @RequestBody(required = false) BiletDTO biletDTO,
+            HttpServletRequest request) {
 
-
-        evenimentService.findById(id);
+        // Authorization: only admin or the event owner can create tickets
+        EvenimentDTO eveniment = evenimentService.findById(id);
+        authHelper.requireOwnership(request, eveniment.getIdOwner());
 
 
         if (biletDTO == null) {
@@ -359,7 +400,7 @@ public class EvenimentController {
                 .withType("GET"));
 
         collectionModel.add(linkTo(methodOn(EvenimentController.class)
-                .addEvenimentToPachet(id, null))
+                .addEvenimentToPachet(id, null, null))
                 .withRel("add-to-packet")
                 .withType("POST"));
 
@@ -373,10 +414,13 @@ public class EvenimentController {
      */
 
     @Operation(summary = "Assign event to a package",
-               description = "Assigns the event with {id} from the URL with the package with {pachetId} from the request body")
+               description = "Assigns the event with {id} from the URL with the package with {pachetId} from the request body. Requires authentication.")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "201", description = "Event successfully assigned to package"),
             @ApiResponse(responseCode = "400", description = "Invalid request - pachetId is required"),
+            @ApiResponse(responseCode = "401", description = "Missing or invalid authentication token"),
+            @ApiResponse(responseCode = "403", description = "Access denied - insufficient permissions"),
             @ApiResponse(responseCode = "409", description = "Business logic conflict"),
             @ApiResponse(responseCode = "415", description = "Unsupported media type - use application/json"),
             @ApiResponse(responseCode = "422", description = "Invalid JSON or incompatible data types")
@@ -391,12 +435,17 @@ public class EvenimentController {
                             examples = @ExampleObject(value = "{\"pachetId\": 2}")
                     )
             )
-            @RequestBody PachetEvenimentCreateDTO dto) {
+            @RequestBody PachetEvenimentCreateDTO dto,
+            HttpServletRequest request) {
 
         // Validare: pachetId e obligatoriu
         if (dto.getPachetId() == null) {
             throw new IllegalArgumentException("pachetId este obligatoriu");
         }
+
+        // Authorization: check ownership of the event
+        EvenimentDTO eveniment = evenimentService.findById(id);
+        authHelper.requireOwnership(request, eveniment.getIdOwner());
 
         PachetEvenimentCreateDTO result = pachetEvenimentService.addPachetToEveniment(id, dto.getPachetId());
 
@@ -412,16 +461,24 @@ public class EvenimentController {
      */
 
     @Operation(summary = "Remove assignment between event and package",
-               description = "Removes the event with {id} from the URL from the package with {pachetId} from the URL")
+               description = "Removes the event with {id} from the URL from the package with {pachetId} from the URL. Requires authentication.")
+    @SecurityRequirement(name = "bearerAuth")
     @ApiResponses(value = {
-            @ApiResponse(responseCode = "204", description = "Assignment successfully removed")
+            @ApiResponse(responseCode = "204", description = "Assignment successfully removed"),
+            @ApiResponse(responseCode = "401", description = "Missing or invalid authentication token"),
+            @ApiResponse(responseCode = "403", description = "Access denied - insufficient permissions")
     })
     @DeleteMapping("/{id}/event-packets/{pachetId}")
     public ResponseEntity<Void> removeEvenimentFromPachet(
             @Parameter(description = "Event ID", example = "1")
             @PathVariable Integer id,
             @Parameter(description = "Package ID", example = "2")
-            @PathVariable Integer pachetId) {
+            @PathVariable Integer pachetId,
+            HttpServletRequest request) {
+
+        // Authorization: check ownership of the event
+        EvenimentDTO eveniment = evenimentService.findById(id);
+        authHelper.requireOwnership(request, eveniment.getIdOwner());
 
         pachetEvenimentService.removePachetFromEveniment(id, pachetId);
         return ResponseEntity.noContent().build();

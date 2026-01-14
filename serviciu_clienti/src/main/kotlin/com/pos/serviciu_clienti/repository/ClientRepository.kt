@@ -16,5 +16,9 @@ interface ClientRepository : MongoRepository<Client, String> {
     // verific daca exista dupa mail
     fun existsByEmail(email: String): Boolean
 
+    // verific daca exista dupa IDM user ID
+    fun existsByIdmUserId(idmUserId: Int): Boolean
 
+    // gasesc client by IDM user ID
+    fun findByIdmUserId(idmUserId: Int): Optional<Client>
 }

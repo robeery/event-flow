@@ -1,7 +1,6 @@
 package com.pos.serviciu_clienti.exception
 
-
-
+import com.pos.serviciu_clienti.security.ForbiddenException
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.converter.HttpMessageNotReadableException
@@ -73,6 +72,18 @@ class GlobalExceptionHandler {
                 status = 400,
                 error = "Bad Request",
                 message = "Request body lipseste sau JSON-ul este invalid"
+            ))
+    }
+
+    // 403 - Forbidden (acces interzis)
+    @ExceptionHandler(ForbiddenException::class)
+    fun handleForbidden(ex: ForbiddenException): ResponseEntity<ErrorResponse> {
+        return ResponseEntity
+            .status(HttpStatus.FORBIDDEN)
+            .body(ErrorResponse(
+                status = 403,
+                error = "Forbidden",
+                message = ex.message ?: "Acces interzis"
             ))
     }
 }

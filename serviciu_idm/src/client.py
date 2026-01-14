@@ -90,6 +90,13 @@ def main():
     if auth_response.success:
         token = auth_response.token
         print(f"   Token: {token[:50]}...\n")
+        #print(f"   Token: {token}\n")
+
+       # with open("jwt.txt", "w") as f:
+       #     print(f"{token}", file=f)
+
+
+
 
         # Test 4: Validare token
         print("4. Validare token...")
@@ -99,12 +106,13 @@ def main():
         print(f"   Role: {val_response.role}")
         print(f"   Message: {val_response.message}\n")
 
+        '''
         # Test 5: Invalidare token
         print("5. Invalidare token (logout)...")
         inv_response = client.invalidate_token(token)
         print(f"   Success: {inv_response.success}")
         print(f"   Message: {inv_response.message}\n")
-
+        '''
         # Test 6: Validare token dupa invalidare
         print("6. Validare token dupa invalidare...")
         val_response2 = client.validate_token(token)

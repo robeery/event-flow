@@ -20,6 +20,7 @@ data class ClientRequestDTO(
 // DTO pentru response (GET) - include ID si bilete
 data class ClientResponseDTO(
     val id: String,
+    val idmUserId: Int,  // Link to IDM user
     val email: String,
     val prenume: String? = null,
     val nume: String? = null,
@@ -32,6 +33,7 @@ data class ClientResponseDTO(
 // DTO simplificat pentru liste (fara bilete)
 data class ClientSummaryDTO(
     val id: String,
+    val idmUserId: Int,  // Link to IDM user
     val email: String,
     val prenume: String? = null,
     val nume: String? = null,
