@@ -54,23 +54,29 @@ data class CumparaBiletDTO(
 
 // DTO pentru bilet in format detaliat (detalii de la serviciu evenimente)
 data class BiletDetaliatDTO(
-    val cod: String,
+    val codBilet: String,
     val tip: String,  // "eveniment" sau "pachet"
+    val eveniment: EvenimentDetaliiDTO? = null,
+    val pachet: PachetDetaliiDTO? = null
+)
 
-    // tip = "eveniment"
-    val evenimentId: Long? = null,
-    val evenimentNume: String? = null,
-    val evenimentLocatie: String? = null,
-    val evenimentDescriere: String? = null,
-    val evenimentNumarLocuri: Int? = null,
-    val evenimentBileteDisponibile: Int? = null,
+// DTO pentru detalii eveniment in bilet
+data class EvenimentDetaliiDTO(
+    val id: Long,
+    val nume: String?,
+    val locatie: String?,
+    val descriere: String? = null,
+    val numarLocuri: Int? = null,
+    val bileteDisponibile: Int? = null
+)
 
-    // tip = "pachet"
-    val pachetId: Long? = null,
-    val pachetNume: String? = null,
-    val pachetLocatie: String? = null,
-    val pachetDescriere: String? = null,
-    val pachetNumarLocuri: Int? = null,
-    val pachetBileteDisponibile: Int? = null,
+// DTO pentru detalii pachet in bilet
+data class PachetDetaliiDTO(
+    val id: Long,
+    val nume: String?,
+    val locatie: String?,
+    val descriere: String? = null,
+    val numarLocuri: Int? = null,
+    val bileteDisponibile: Int? = null,
     val evenimenteIncluse: List<String>? = null
 )

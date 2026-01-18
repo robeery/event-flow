@@ -93,9 +93,8 @@ public class BiletController {
             )
             @RequestBody BiletDTO biletDTO,
             HttpServletRequest request) {
-        // Authorization: check ownership of the event or package
-        Integer ownerId = getOwnerIdForTicket(biletDTO);
-        authHelper.requireOwnership(request, ownerId);
+        // Authorization: any authenticated user can purchase tickets
+        authHelper.requireCanPurchaseTicket(request);
 
         BiletDTO createdBilet = biletService.create(biletDTO);
         hateoasHelper.addLinksToBilet(createdBilet);
@@ -127,10 +126,9 @@ public class BiletController {
             @Parameter(description = "Unique ticket code identifier", example = "BILET-a1b2c3d4")
             @PathVariable String cod,
             HttpServletRequest request) {
-        // Authorization: check ownership of the event or package associated with ticket
-        BiletDTO bilet = biletService.findByCod(cod);
-        Integer ownerId = getOwnerIdForTicket(bilet);
-        authHelper.requireOwnership(request, ownerId);
+        // Authorization: any authenticated user can return/delete tickets
+        // (serviciu_clienti manages ownership of tickets to clients)
+        authHelper.requireCanPurchaseTicket(request);
 
         biletService.delete(cod);
         return ResponseEntity.noContent().build();
@@ -174,14 +172,13 @@ public class BiletController {
         boolean exists = biletService.existsByCod(cod);
 
         if (exists) {
-            // Authorization: check ownership of existing ticket
+            // Authorization: check ownership of existing ticket (only owner can update)
             BiletDTO existing = biletService.findByCod(cod);
             Integer ownerId = getOwnerIdForTicket(existing);
             authHelper.requireOwnership(request, ownerId);
         } else {
-            // Authorization: check ownership for new ticket
-            Integer ownerId = getOwnerIdForTicket(biletDTO);
-            authHelper.requireOwnership(request, ownerId);
+            // Authorization: any authenticated user can purchase (create) a new ticket
+            authHelper.requireCanPurchaseTicket(request);
         }
 
 

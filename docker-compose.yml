@@ -1,0 +1,204 @@
+version: '3.8'
+
+services:
+  # =============================================================================
+  # DATABASES
+  # =============================================================================
+
+  # MariaDB for serviciu_idm
+  mariadb-idm:
+    image: mariadb:10.11
+    container_name: mariadb-idm
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: eventflow_idm
+      MYSQL_USER: idm_user
+      MYSQL_PASSWORD: idm_pass123
+    ports:
+      - "3307:3306"
+    volumes:
+      - mariadb_idm_data:/var/lib/mysql
+    networks:
+      - eventflow-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MariaDB for serviciu_bilete
+  mariadb-bilete:
+    image: mariadb:10.11
+    container_name: mariadb-bilete
+    environment:
+      MYSQL_ROOT_PASSWORD: ServiciuBilete!2025
+      MYSQL_DATABASE: serviciu_bilete
+    ports:
+      - "3308:3306"
+    volumes:
+      - mariadb_bilete_data:/var/lib/mysql
+    networks:
+      - eventflow-network
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # MongoDB for serviciu_clienti
+  mongodb:
+    image: mongo:7.0
+    container_name: mongodb-clienti
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - eventflow-network
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # =============================================================================
+  # SERVICES
+  # =============================================================================
+
+  # Identity Management Service (Python gRPC)
+  serviciu-idm:
+    build:
+      context: ./serviciu_idm
+      dockerfile: Dockerfile
+    container_name: serviciu-idm
+    environment:
+      DB_HOST: mariadb-idm
+      DB_PORT: 3306
+      DB_NAME: eventflow_idm
+      DB_USER: idm_user
+      DB_PASSWORD: idm_pass123
+      JWT_SECRET_KEY: super-secret-jwt-key-for-docker
+      JWT_ALGORITHM: HS256
+      JWT_EXPIRATION_HOURS: 1
+      GRPC_PORT: 50051
+    ports:
+      - "50051:50051"
+    depends_on:
+      mariadb-idm:
+        condition: service_healthy
+    networks:
+      - eventflow-network
+    restart: on-failure
+
+  # Events/Tickets Service (Java Spring Boot)
+  serviciu-bilete:
+    build:
+      context: ./serviciu_bilete
+      dockerfile: Dockerfile
+    container_name: serviciu-bilete
+    environment:
+      DB_URL: jdbc:mariadb://mariadb-bilete:3306/serviciu_bilete
+      DB_USERNAME: root
+      DB_PASSWORD: ServiciuBilete!2025
+      IDM_HOST: serviciu-idm
+      IDM_PORT: 50051
+    ports:
+      - "8080:8080"
+    depends_on:
+      mariadb-bilete:
+        condition: service_healthy
+      serviciu-idm:
+        condition: service_started
+    networks:
+      - eventflow-network
+    restart: on-failure
+
+  # Clients Service (Kotlin Spring Boot)
+  serviciu-clienti:
+    build:
+      context: ./serviciu_clienti
+      dockerfile: Dockerfile
+    container_name: serviciu-clienti
+    environment:
+      MONGO_HOST: mongodb
+      MONGO_PORT: 27017
+      MONGO_DATABASE: eventflow_clients
+      EVENTS_SERVICE_URL: http://serviciu-bilete:8080
+      IDM_HOST: serviciu-idm
+      IDM_PORT: 50051
+    ports:
+      - "8081:8081"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      serviciu-idm:
+        condition: service_started
+      serviciu-bilete:
+        condition: service_started
+    networks:
+      - eventflow-network
+    restart: on-failure
+
+  # API Gateway Service (Python FastAPI)
+  serviciu-gateway:
+    build:
+      context: ./serviciu_gateway
+      dockerfile: Dockerfile
+    container_name: serviciu-gateway
+    environment:
+      IDM_HOST: serviciu-idm
+      IDM_PORT: 50051
+      BILETE_SERVICE_URL: http://serviciu-bilete:8080
+      CLIENTI_SERVICE_URL: http://serviciu-clienti:8081
+      GATEWAY_PORT: 8000
+    ports:
+      - "8000:8000"
+    depends_on:
+      - serviciu-idm
+    networks:
+      - eventflow-network
+    restart: on-failure
+
+  # Frontend Service (React + TypeScript)
+  serviciu-frontend:
+    build:
+      context: ./serviciu_frontend
+      dockerfile: Dockerfile
+    container_name: serviciu-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - serviciu-gateway
+      - serviciu-bilete
+      - serviciu-clienti
+    networks:
+      - eventflow-network
+    restart: on-failure
+
+  # Database Initialization Service (runs once and exits)
+  db-init:
+    build:
+      context: ./scripts
+      dockerfile: Dockerfile
+    container_name: db-init
+    depends_on:
+      - serviciu-gateway
+      - serviciu-bilete
+      - serviciu-clienti
+      - serviciu-frontend
+    networks:
+      - eventflow-network
+    restart: "no"
+
+# =============================================================================
+# NETWORKS & VOLUMES
+# =============================================================================
+
+networks:
+  eventflow-network:
+    driver: bridge
+
+volumes:
+  mariadb_idm_data:
+  mariadb_bilete_data:
+  mongodb_data:

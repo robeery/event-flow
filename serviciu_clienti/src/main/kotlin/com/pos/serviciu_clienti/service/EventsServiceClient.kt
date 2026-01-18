@@ -25,16 +25,23 @@ class EventsServiceClient(
     }
 
     // Creeaza bilet in Events Service prin PUT
-    fun createBilet(codBilet: String, evenimentId: Long?, pachetId: Long?): BiletResponse {
+    fun createBilet(codBilet: String, evenimentId: Long?, pachetId: Long?, authToken: String?): BiletResponse {
         val requestBody = BiletRequest(
             evenimentId = evenimentId,
             pachetId = pachetId
         )
 
         return try {
-            val response = webClient.put()
+            var request = webClient.put()
                 .uri("/api/event-manager/tickets/{cod}", codBilet)
                 .contentType(MediaType.APPLICATION_JSON)
+            
+            // Adauga token-ul de autorizare daca exista
+            if (authToken != null) {
+                request = request.header("Authorization", authToken)
+            }
+            
+            val response = request
                 .bodyValue(requestBody)
                 .retrieve()
                 .bodyToMono(BiletResponse::class.java)
@@ -49,17 +56,25 @@ class EventsServiceClient(
         } catch (ex: WebClientResponseException.UnprocessableEntity) {
             throw IllegalStateException("Nu se poate crea biletul: ${ex.message}")
         } catch (ex: WebClientResponseException) {
-            throw RuntimeException("Eroare de la Events Service: ${ex.statusCode} - ${ex.message}")
+            val responseBody = ex.responseBodyAsString
+            throw RuntimeException("Eroare de la Events Service: ${ex.statusCode} - ${ex.message} - Body: $responseBody")
         } catch (ex: Exception) {
             throw RuntimeException("Eroare la comunicarea cu Events Service: ${ex.message}")
         }
     }
 
     // sterge bilet din Events Service
-    fun deleteBilet(codBilet: String) {
+    fun deleteBilet(codBilet: String, authToken: String?) {
         try {
-            webClient.delete()
+            var request = webClient.delete()
                 .uri("/api/event-manager/tickets/{cod}", codBilet)
+            
+            // Adauga token-ul de autorizare daca exista
+            if (authToken != null) {
+                request = request.header("Authorization", authToken)
+            }
+            
+            request
                 .retrieve()
                 .toBodilessEntity()
                 .block()

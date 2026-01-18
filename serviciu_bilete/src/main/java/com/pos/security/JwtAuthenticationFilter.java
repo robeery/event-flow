@@ -23,6 +23,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String path = request.getRequestURI();
+        String method = request.getMethod();
 
         // Allow Swagger/OpenAPI endpoints without authentication
         if (isPublicEndpoint(path)) {
@@ -32,6 +33,21 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         String authHeader = request.getHeader("Authorization");
 
+        // GET requests are public - but still parse token if provided
+        if ("GET".equalsIgnoreCase(method)) {
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                String token = authHeader.substring(7);
+                IdmClientService.TokenValidationResult result = idmClientService.validateToken(token);
+                if (result.valid()) {
+                    AuthenticatedUser authenticatedUser = new AuthenticatedUser(result.userId(), result.role());
+                    request.setAttribute(AUTH_USER_ATTRIBUTE, authenticatedUser);
+                }
+            }
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // POST, PUT, DELETE, PATCH require authentication
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             sendUnauthorizedResponse(response, "Missing or invalid Authorization header. Use: Bearer <token>");
             return;
@@ -58,7 +74,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                path.startsWith("/v3/api-docs") ||
                path.equals("/") ||
                path.startsWith("/webjars/") ||
-               path.startsWith("/swagger-resources");
+               path.startsWith("/swagger-resources") ||
+               path.startsWith("/api/auth");
     }
 
     private void sendUnauthorizedResponse(HttpServletResponse response, String message) throws IOException {

@@ -21,6 +21,7 @@ class JwtAuthenticationFilter(
         filterChain: FilterChain
     ) {
         val path = request.requestURI
+        val method = request.method
 
         // Allow Swagger/OpenAPI endpoints without authentication
         if (isPublicEndpoint(path)) {
@@ -30,6 +31,21 @@ class JwtAuthenticationFilter(
 
         val authHeader = request.getHeader("Authorization")
 
+        // GET requests are public - but still parse token if provided
+        if (method.equals("GET", ignoreCase = true)) {
+            if (authHeader != null && authHeader.startsWith("Bearer ")) {
+                val token = authHeader.substring(7)
+                val result = idmClientService.validateToken(token)
+                if (result.valid) {
+                    val authenticatedUser = AuthenticatedUser(result.userId, result.role ?: "")
+                    request.setAttribute(AUTH_USER_ATTRIBUTE, authenticatedUser)
+                }
+            }
+            filterChain.doFilter(request, response)
+            return
+        }
+
+        // POST, PUT, DELETE, PATCH require authentication
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             sendUnauthorizedResponse(response, "Missing or invalid Authorization header. Use: Bearer <token>")
             return

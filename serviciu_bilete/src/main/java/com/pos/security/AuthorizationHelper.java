@@ -61,4 +61,25 @@ public class AuthorizationHelper {
         }
         return user.userId();
     }
+
+    /**
+     * Requires the user to be authenticated (any role is allowed).
+     * Used for operations that any logged-in user can perform, like buying tickets.
+     */
+    public void requireAuthenticated(HttpServletRequest request) {
+        getAuthenticatedUser(request); // Throws if not authenticated
+    }
+
+    /**
+     * Checks if user can manage a ticket (buy/return).
+     * Admins and owner-events can manage any ticket.
+     * Clients can only buy/return tickets (no ownership check for buying).
+     */
+    public void requireCanPurchaseTicket(HttpServletRequest request) {
+        AuthenticatedUser user = getAuthenticatedUser(request);
+        // Any authenticated user can purchase tickets
+        if (!user.isAdmin() && !user.isOwnerEvent() && !user.isClient()) {
+            throw new ForbiddenException("You must be logged in to purchase tickets");
+        }
+    }
 }

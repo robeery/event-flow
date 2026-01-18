@@ -1,0 +1,13 @@
+target/
+*.class
+*.jar
+*.war
+*.log
+.git
+.gitignore
+*.md
+.idea/
+*.iml
+.mvn/
+mvnw
+mvnw.cmd

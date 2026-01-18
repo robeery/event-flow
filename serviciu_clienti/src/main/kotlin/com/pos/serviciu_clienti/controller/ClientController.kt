@@ -246,7 +246,10 @@ class ClientController(
         val existingClient = clientService.getClientById(id)
         authHelper.requireClientOwnership(request, existingClient.idmUserId)
 
-        val client = clientService.cumparaBilet(id, dto)
+        // Extrage token-ul din header pentru a-l pasa la Events Service
+        val authToken = request.getHeader("Authorization")
+
+        val client = clientService.cumparaBilet(id, dto, authToken)
         val response = toResponseDTO(client)
         return ResponseEntity.status(HttpStatus.CREATED).body(response)
     }
@@ -272,7 +275,10 @@ class ClientController(
         val existingClient = clientService.getClientById(id)
         authHelper.requireClientOwnership(request, existingClient.idmUserId)
 
-        val client = clientService.returneazaBilet(id, codBilet)
+        // Extrage token-ul din header pentru a-l pasa la Events Service
+        val authToken = request.getHeader("Authorization")
+
+        val client = clientService.returneazaBilet(id, codBilet, authToken)
         val response = toResponseDTO(client)
         return ResponseEntity.ok(response)
     }

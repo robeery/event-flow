@@ -98,7 +98,7 @@ class ClientService(
     }
 
     // BILETE - Cumpara bilet (ACTUALIZAT)
-    fun cumparaBilet(clientId: String, dto: CumparaBiletDTO): Client {
+    fun cumparaBilet(clientId: String, dto: CumparaBiletDTO, authToken: String?): Client {
         // Validare DTO
         if (!dto.isValid()) {
             throw IllegalArgumentException("Trebuie sa specifici fie evenimentId, fie pachetId (nu ambele, nu niciunul)")
@@ -109,8 +109,8 @@ class ClientService(
         // Genereaza cod bilet
         val codBilet = eventsServiceClient.generateCodBilet()
 
-        // Creeaza biletul in Events Service
-        eventsServiceClient.createBilet(codBilet, dto.evenimentId, dto.pachetId)
+        // Creeaza biletul in Events Service (pasam token-ul)
+        eventsServiceClient.createBilet(codBilet, dto.evenimentId, dto.pachetId, authToken)
 
         // Adauga codul biletului la client
         client.bileteAchizitionate.add(codBilet)
@@ -119,15 +119,15 @@ class ClientService(
     }
 
     // BILETE - Sterge bilet de la client
-    fun returneazaBilet(clientId: String, codBilet: String): Client {
+    fun returneazaBilet(clientId: String, codBilet: String, authToken: String?): Client {
         val client = getClientById(clientId)
 
         if (!client.bileteAchizitionate.contains(codBilet)) {
             throw NoSuchElementException("Biletul '$codBilet' nu exista la acest client")
         }
 
-        // Sterge biletul din Events Service
-        eventsServiceClient.deleteBilet(codBilet)
+        // Sterge biletul din Events Service (pasam token-ul)
+        eventsServiceClient.deleteBilet(codBilet, authToken)
 
         // Sterge din lista clientului
         client.bileteAchizitionate.remove(codBilet)
@@ -152,14 +152,16 @@ class ClientService(
                     biletInfo.evenimentId != null -> {
                         val eveniment = eventsServiceClient.getEveniment(biletInfo.evenimentId)
                         BiletDetaliatDTO(
-                            cod = codBilet,
+                            codBilet = codBilet,
                             tip = "eveniment",
-                            evenimentId = biletInfo.evenimentId,
-                            evenimentNume = eveniment?.nume,
-                            evenimentLocatie = eveniment?.locatie,
-                            evenimentDescriere = eveniment?.descriere,
-                            evenimentNumarLocuri = eveniment?.numarLocuri,
-                            evenimentBileteDisponibile = eveniment?.bileteDisponibile
+                            eveniment = EvenimentDetaliiDTO(
+                                id = biletInfo.evenimentId,
+                                nume = eveniment?.nume,
+                                locatie = eveniment?.locatie,
+                                descriere = eveniment?.descriere,
+                                numarLocuri = eveniment?.numarLocuri,
+                                bileteDisponibile = eveniment?.bileteDisponibile
+                            )
                         )
                     }
                     // Bilet pentru pachet
@@ -167,23 +169,25 @@ class ClientService(
                         val pachet = eventsServiceClient.getPachet(biletInfo.pachetId)
                         val evenimentePachet = eventsServiceClient.getEvenimentePachet(biletInfo.pachetId)
                         BiletDetaliatDTO(
-                            cod = codBilet,
+                            codBilet = codBilet,
                             tip = "pachet",
-                            pachetId = biletInfo.pachetId,
-                            pachetNume = pachet?.nume,
-                            pachetLocatie = pachet?.locatie,
-                            pachetDescriere = pachet?.descriere,
-                            pachetNumarLocuri = pachet?.numarLocuri,
-                            pachetBileteDisponibile = pachet?.bileteDisponibile,
-                            evenimenteIncluse = evenimentePachet.mapNotNull { it.nume }
+                            pachet = PachetDetaliiDTO(
+                                id = biletInfo.pachetId,
+                                nume = pachet?.nume,
+                                locatie = pachet?.locatie,
+                                descriere = pachet?.descriere,
+                                numarLocuri = pachet?.numarLocuri,
+                                bileteDisponibile = pachet?.bileteDisponibile,
+                                evenimenteIncluse = evenimentePachet.mapNotNull { it.nume }
+                            )
                         )
                     }
                     else -> {
-                        BiletDetaliatDTO(cod = codBilet, tip = "necunoscut")
+                        BiletDetaliatDTO(codBilet = codBilet, tip = "necunoscut")
                     }
                 }
             } else {
-                BiletDetaliatDTO(cod = codBilet, tip = "invalid")
+                BiletDetaliatDTO(codBilet = codBilet, tip = "invalid")
             }
         }
     }

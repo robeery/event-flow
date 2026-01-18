@@ -64,4 +64,40 @@ public class IdmClientService {
     }
 
     public record TokenValidationResult(boolean valid, int userId, String role, String message) {}
+
+    public AuthResult authenticate(String email, String password) {
+        try {
+            com.pos.grpc.idm.AuthRequest request = com.pos.grpc.idm.AuthRequest.newBuilder()
+                    .setUsername(email)
+                    .setPassword(password)
+                    .build();
+
+            com.pos.grpc.idm.AuthResponse response = blockingStub.authenticate(request);
+
+            return new AuthResult(
+                    response.getSuccess(),
+                    response.getToken(),
+                    response.getMessage()
+            );
+        } catch (StatusRuntimeException e) {
+            return new AuthResult(false, null, "IDM service unavailable: " + e.getStatus());
+        }
+    }
+
+    public InvalidateResult invalidateToken(String token) {
+        try {
+            TokenRequest request = TokenRequest.newBuilder()
+                    .setToken(token)
+                    .build();
+
+            com.pos.grpc.idm.InvalidationResponse response = blockingStub.invalidateToken(request);
+
+            return new InvalidateResult(response.getSuccess(), response.getMessage());
+        } catch (StatusRuntimeException e) {
+            return new InvalidateResult(false, "IDM service unavailable: " + e.getStatus());
+        }
+    }
+
+    public record AuthResult(boolean success, String token, String message) {}
+    public record InvalidateResult(boolean success, String message) {}
 }

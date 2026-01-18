@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+
+package idm;
+
+//server principal
+
+service IdentityService {
+  // autentificare utilizator (login)
+  rpc Authenticate(AuthRequest) returns (AuthResponse);
+  
+  // Validare token JWT
+  // folosit de celelalte servicii validare
+  rpc ValidateToken(TokenRequest) returns (ValidationResponse);
+  
+  // invalidare token (logout)
+  rpc InvalidateToken(TokenRequest) returns (InvalidationResponse);
+  
+  // Creare utilizator nou (doar pentru admin)
+  rpc CreateUser(CreateUserRequest) returns (UserResponse);
+}
+
+
+//mesaje autentificare
+
+
+// Request pentru login
+
+message AuthRequest {
+  string username = 1;  // email-ul utilizatorului
+  string password = 2;  // parola (va fi hash uita server-side)
+}
+
+
+message AuthResponse {
+  bool success = 1;        // true daca autentificarea a reusit
+  string token = 2;        // Token JWT (doar daca success = true)
+  string message = 3;      // Mesaj pentru user ("Login successful" sau "Invalid credentials")
+}
+
+//mesaje validare token
+
+// Request pentru validare/invalidare token
+message TokenRequest {
+  string token = 1;  // Token-ul JWT în format Base64Url
+}
+
+// Response de la validare
+message ValidationResponse {
+  bool valid = 1;          // true daca token-ul e valid
+  int32 user_id = 2;       // ID-ul utilizatorului
+  string role = 3;         // Rolul: "admin", "owner-event", "client"
+  string message = 4;      // Mesaj de eroare daca valid = false
+}
+
+// Response de la invalidare (logout)
+message InvalidationResponse {
+  bool success = 1;    // true daca invalidarea a reusit
+  string message = 2;  // Mesaj de confirmare
+}
+
+
+// mesaje gestionare utilizatori
+
+
+// Request pentru creare utilizator
+message CreateUserRequest {
+  string email = 1;     // Email-ul (folosit ca username)
+  string password = 2;  // Parola
+  string role = 3;      // Rolul: "admin", "owner-event", "client"
+}
+
+// Response de la creare utilizator
+message UserResponse {
+  bool success = 1;    // true daca crearea a reușit
+  int32 user_id = 2;   // ID-ul utilizatorului creat
+  string message = 3;  // mesaj de confirmare sau eroare
+}
